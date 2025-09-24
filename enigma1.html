@@ -3,21 +3,134 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Enigma 2</title>
+  <title>Enigma 1 - Cifrario</title>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=2025-09-24-01">
+  <script src="assets/app.js?v=2025-09-24-01"></script>
 </head>
-<body>
-  <main class="container-narrow center-stack">
-    <h1>Enigma 2</h1>
-    <p>Placeholder. (Qui metterai il prossimo enigma.)</p>
-    <button class="big-next" onclick="goNext('enigma3.html')">Prosegui</button>
+<body data-page="enigma1">
+  <script>initGate('enigma1', { requiredStep: 'start' });</script>
+  <main class="container-narrow">
+    <article class="center-stack">
+      <header>
+        <h1>Enigma 1 - Cifrario mutevole</h1>
+        <p>Il messaggio cambia ad ogni tuo tentativo: il shift del cifrario Cesare si rigenera in continuazione, ma il testo in chiaro resta lo stesso.</p>
+      </header>
+
+      <!-- TODO: Caricare le immagini definitive e usarle come fonte di indizi/metadati -->`n      <section class="cipher-board">
+        <div>
+          <span class="cipher-label">Shift attuale:</span>
+          <strong id="shiftValue">+0</strong>
+        </div>
+        <pre id="cipherText" class="cipher-text">?</pre>
+        <div class="cipher-actions">
+          <button type="button" id="rerollShift" class="secondary">Rigenera shift</button>
+          <small>Storico recente:</small>
+          <ul id="shiftHistory" class="cipher-history"></ul>
+        </div>
+      </section>
+
+      <form id="cipherForm" class="cipher-form">
+        <label for="cipherAnswer">Ricostruisci il testo originale</label>
+        <input id="cipherAnswer" name="answer" type="text" autocomplete="off" spellcheck="false" placeholder="Scrivi la frase" required>
+        <button type="submit">Conferma</button>
+        <p id="cipherFeedback" class="cipher-feedback" aria-live="polite"></p>
+      </form>
+
+      <footer class="cipher-hint">
+        <p>Hint: l'oggetto illuminava gia l'ingresso sulla pagina iniziale.</p><!-- TODO: Raffinare il quinto indizio collegandolo ai metadati di un'immagine dell'enigma 1 -->
+      </footer>
+    </article>
   </main>
-  <script src="assets/app.js"></script>
-  <script src="assets/app.js?v=5"></script>
-<script>
-  // Deve aver completato enigma1
-  checkAccess("enigma2", "enigma1");
-</script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const TARGET = 'LANTERNA SUL BALCONE';
+      const targetNormalized = TARGET.replace(/[^a-z]/gi, '').toLowerCase();
+
+      const shiftValueEl = document.getElementById('shiftValue');
+      const cipherTextEl = document.getElementById('cipherText');
+      const rerollBtn = document.getElementById('rerollShift');
+      const historyEl = document.getElementById('shiftHistory');
+      const form = document.getElementById('cipherForm');
+      const answerInput = document.getElementById('cipherAnswer');
+      const feedbackEl = document.getElementById('cipherFeedback');
+
+      if (!shiftValueEl || !cipherTextEl || !form) return;
+
+      const MAX_HISTORY = 6;
+      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      let currentShift = 0;
+
+      const normalize = (text) => (text || '').replace(/[^a-z]/gi, '').toLowerCase();
+
+      const encode = (plain, shift) => {
+        const upper = plain.toUpperCase();
+        return Array.from(upper).map((char) => {
+          const idx = alphabet.indexOf(char);
+          if (idx === -1) return char;
+          const newIdx = (idx + shift + 26) % 26;
+          return alphabet[newIdx];
+        }).join('');
+      };
+
+      const pushHistory = (shift, text) => {
+        if (!historyEl) return;
+        const entry = document.createElement('li');
+        entry.textContent = 'Shift ' + (shift > 0 ? '+' : '') + shift + ': ' + text;
+        historyEl.prepend(entry);
+        while (historyEl.children.length > MAX_HISTORY) {
+          historyEl.removeChild(historyEl.lastElementChild);
+        }
+      };
+
+      const randomShift = () => {
+        let shift = 0;
+        while (shift === 0) {
+          shift = Math.floor(Math.random() * 25) + 1; // 1..25
+          if (Math.random() < 0.5) shift *= -1;
+        }
+        return shift;
+      };
+
+      const rollCipher = (reason = 'auto') => {
+        currentShift = randomShift();
+        const encoded = encode(targetNormalized, currentShift).match(/.{1,4}/g)?.join(' ') || '';
+        cipherTextEl.textContent = encoded;
+        shiftValueEl.textContent = (currentShift > 0 ? '+' : '') + currentShift;
+        pushHistory(currentShift, encoded);
+        if (reason === 'typing') {
+          cipherTextEl.classList.add('wiggle');
+          setTimeout(() => cipherTextEl.classList.remove('wiggle'), 180);
+        }
+      };
+
+      const handleSubmit = (event) => {
+        event.preventDefault();
+        const attempt = normalize(answerInput.value);
+        if (!attempt) {
+          feedbackEl.textContent = 'Serve scrivere qualcosa.';
+          feedbackEl.dataset.state = 'warn';
+          return;
+        }
+        if (attempt === targetNormalized) {
+          feedbackEl.textContent = 'Perfetto! Avanti cosi.';
+          feedbackEl.dataset.state = 'ok';
+          setTimeout(() => goNext('enigma2.html', 'enigma2'), 400);
+          return;
+        }
+        feedbackEl.textContent = 'Nope. Il cifrario si confonde e cambia di nuovo.';
+        feedbackEl.dataset.state = 'error';
+        answerInput.focus();
+        rollCipher('manual');
+      };
+
+      form.addEventListener('submit', handleSubmit);
+      answerInput.addEventListener('input', () => rollCipher('typing'));
+      rerollBtn?.addEventListener('click', () => rollCipher('manual'));
+
+      rollCipher('init');
+    });
+  </script>
 </body>
 </html>

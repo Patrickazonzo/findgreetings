@@ -3,21 +3,236 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Enigma 2</title>
+  <title>Enigma 2 - Slide Puzzle</title>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=2025-09-24-01">
+  <script src="assets/app.js?v=2025-09-24-01"></script>
 </head>
-<body>
-  <main class="container-narrow center-stack">
-    <h1>Enigma 2</h1>
-    <p>Placeholder. (Qui metterai il prossimo enigma.)</p>
-    <button class="big-next" onclick="goNext('enigma3.html')">Prosegui</button>
+<body data-page="enigma2">
+  <script>initGate('enigma2', { requiredStep: 'enigma1' });</script>
+  <main class="container-narrow">
+    <article class="center-stack">
+      <header>
+        <h1>Enigma 2 - Slide Puzzle</h1>
+        <p>Ricomponi il meme prima che il tempo scada. Per ora c'e solo un'anteprima numerata, ma la logica e pronta per un'immagine vera.</p>
+      </header>
+
+      <section class="puzzle-info" aria-live="polite">
+        <div><strong>Mosse:</strong> <span id="puzzleMoves">0</span></div>
+        <div><strong>Tempo:</strong> <span id="puzzleTimer">02:30</span></div>
+        <button type="button" id="puzzleReset" class="secondary">Rigenera puzzle</button>
+      </section>
+
+      <div class="puzzle-stage">
+        <div class="puzzle-wrapper">
+          <button type="button" class="puzzle-eye" id="puzzleEye" aria-label="Occhio furbetto">??</button> <!-- TODO: Regolare il posizionamento definitivo dell'occhietto skip per enigma 3 -->
+          <div id="slidePuzzle" class="slide-puzzle" aria-label="Puzzle a scorrimento"></div>
+          <p id="puzzleStatus" class="puzzle-status" aria-live="assertive"></p>
+        </div>
+        <aside class="puzzle-preview" aria-hidden="true">
+          <h2>Anteprima soluzione</h2>
+          <div class="puzzle-preview-grid" role="presentation"> <!-- TODO: Sostituire con miniature reali una volta caricate le immagini -->
+            <span>1</span>
+            <span>2</span>
+            <span>3</span>
+            <span>4</span>
+            <span>5</span>
+            <span>6</span>
+            <span>7</span>
+            <span>8</span>
+            <span>9</span>
+            <span>10</span>
+            <span>11</span>
+            <span>12</span>
+            <span>13</span>
+            <span>14</span>
+            <span>15</span>
+            <span class="is-empty"></span>
+          </div>
+        </aside>
+      </div>
+    </article>
   </main>
-  <script src="assets/app.js"></script>
-  <script src="assets/app.js?v=5"></script>
-<script>
-  // Deve aver completato enigma1
-  checkAccess("enigma2", "enigma1");
-</script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const SIZE = 4; // 4x4 (15 puzzle)
+      const TIME_LIMIT = 150; // secondi
+      const puzzleEl = document.getElementById('slidePuzzle');
+      const timerEl = document.getElementById('puzzleTimer');
+      const moveEl = document.getElementById('puzzleMoves');
+      const statusEl = document.getElementById('puzzleStatus');
+      const resetBtn = document.getElementById('puzzleReset');
+      const skipEyeBtn = document.getElementById('puzzleEye');
+
+      if (!puzzleEl) return;
+
+      let board = [];
+      let emptyIndex = 0;
+      let moves = 0;
+      let timerId = null;
+      let remaining = TIME_LIMIT;
+      let solved = false;
+
+      const indexToCoord = (idx) => ({
+        row: Math.floor(idx / SIZE),
+        col: idx % SIZE
+      });
+
+      const coordToIndex = (row, col) => row * SIZE + col;
+
+      const formatTime = (seconds) => {
+        const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
+        const ss = String(seconds % 60).padStart(2, '0');
+        return mm + ':' + ss;
+      };
+
+      const updateHud = () => {
+        moveEl.textContent = moves;
+        timerEl.textContent = formatTime(Math.max(0, remaining));
+      };
+
+      const buildTile = (value, index) => {
+        const tile = document.createElement('button');
+        tile.type = 'button';
+        tile.className = 'puzzle-tile';
+        const { row, col } = indexToCoord(index);
+        tile.style.setProperty('--tile-x', col);
+        tile.style.setProperty('--tile-y', row);
+        tile.style.setProperty('--tile-size', SIZE);
+
+        if (value === 0) {
+          tile.classList.add('is-empty');
+          tile.tabIndex = -1;
+          tile.setAttribute('aria-hidden', 'true');
+        } else {
+          tile.textContent = value;
+          tile.setAttribute('aria-label', 'Pezzo ' + value);
+        }
+
+        tile.addEventListener('click', () => {
+          if (solved) return;
+          handleMove(index);
+        });
+
+        return tile;
+      };
+
+      const renderBoard = () => {
+        puzzleEl.innerHTML = '';
+        puzzleEl.style.setProperty('--puzzle-size', SIZE);
+        board.forEach((value, index) => {
+          puzzleEl.appendChild(buildTile(value, index));
+        });
+      };
+
+      const isAdjacent = (i1, i2) => {
+        const a = indexToCoord(i1);
+        const b = indexToCoord(i2);
+        const sameRow = a.row === b.row && Math.abs(a.col - b.col) === 1;
+        const sameCol = a.col === b.col && Math.abs(a.row - b.row) === 1;
+        return sameRow || sameCol;
+      };
+
+      const isSolved = () => board.every((val, idx, arr) => (idx === arr.length - 1 ? val === 0 : val === idx + 1));
+
+      const stopTimer = () => {
+        if (timerId) {
+          clearInterval(timerId);
+          timerId = null;
+        }
+      };
+
+      const startTimer = () => {
+        stopTimer();
+        remaining = TIME_LIMIT;
+        timerId = setInterval(() => {
+          remaining -= 1;
+          if (remaining <= 0) {
+            remaining = 0;
+            updateHud();
+            stopTimer();
+            statusEl.textContent = 'Tempo scaduto! Ho rigenerato il puzzle.';
+            reshuffle('timeout');
+            return;
+          }
+          updateHud();
+        }, 1000);
+        updateHud();
+      };
+
+      const moveTile = (tileIndex) => {
+        [board[tileIndex], board[emptyIndex]] = [board[emptyIndex], board[tileIndex]];
+        emptyIndex = tileIndex;
+        moves += 1;
+        renderBoard();
+        updateHud();
+      };
+
+      const handleMove = (tileIndex) => {
+        if (!isAdjacent(tileIndex, emptyIndex)) return;
+        moveTile(tileIndex);
+        if (isSolved()) {
+          solved = true;
+          stopTimer();
+          statusEl.textContent = 'Grande! Puzzle completo.';
+          setTimeout(() => goNext('enigma3.html', 'enigma3'), 700);
+        }
+      };
+
+      const scramble = (iterations = 250) => {
+        const directions = [
+          { dr: 1, dc: 0 },
+          { dr: -1, dc: 0 },
+          { dr: 0, dc: 1 },
+          { dr: 0, dc: -1 },
+        ];
+        let currentEmpty = board.length - 1;
+        for (let i = 0; i < iterations; i += 1) {
+          const { row, col } = indexToCoord(currentEmpty);
+          const neighbors = directions
+            .map(({ dr, dc }) => ({ row: row + dr, col: col + dc }))
+            .filter(({ row: r, col: c }) => r >= 0 && r < SIZE && c >= 0 && c < SIZE)
+            .map(({ row: r, col: c }) => coordToIndex(r, c));
+          const pick = neighbors[Math.floor(Math.random() * neighbors.length)];
+          [board[pick], board[currentEmpty]] = [board[currentEmpty], board[pick]];
+          currentEmpty = pick;
+        }
+        emptyIndex = currentEmpty;
+      };
+
+      const reshuffle = (reason = 'manual') => {
+        solved = false;
+        moves = 0;
+        if (reason !== 'timeout') {
+          statusEl.textContent = '';
+        }
+        board = Array.from({ length: SIZE * SIZE }, (_, idx) => (idx === SIZE * SIZE - 1 ? 0 : idx + 1));
+        emptyIndex = board.length - 1;
+        scramble();
+        renderBoard();
+        startTimer();
+      };
+
+      resetBtn?.addEventListener('click', () => reshuffle('manual'));
+      skipEyeBtn?.addEventListener('click', () => goNext('enigma3.html', 'enigma3'));
+
+      document.addEventListener('keydown', (event) => {
+        if (solved) return;
+        const { key } = event;
+        let target = null;
+        if (key === 'ArrowUp') target = emptyIndex + SIZE;
+        if (key === 'ArrowDown') target = emptyIndex - SIZE;
+        if (key === 'ArrowLeft' && emptyIndex % SIZE < SIZE - 1) target = emptyIndex + 1;
+        if (key === 'ArrowRight' && emptyIndex % SIZE > 0) target = emptyIndex - 1;
+        if (target != null && target >= 0 && target < board.length) {
+          event.preventDefault();
+          handleMove(target);
+        }
+      });
+
+      reshuffle('manual');
+    });
+  </script>
 </body>
 </html>

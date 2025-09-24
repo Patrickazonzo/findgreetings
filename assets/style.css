@@ -1,99 +1,669 @@
 /* Layout di base */
 .full-viewport {
-    min-height: 100vh;
+  min-height: 100vh;
+}
+
+.bg-dark {
+  background: #000;
+  color: #000;
+}
+
+.container-center {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.container-narrow {
+  max-width: 680px;
+  margin: 6vh auto;
+  padding: 1rem;
+}
+
+.center-stack {
+  display: grid;
+  gap: 1.25rem;
+  justify-items: center;
+  text-align: center;
+}
+
+/* Testo quasi invisibile, si nota solo selezionando */
+.visually-dim {
+  color: #0a0a0a;
+}
+
+/* Pulsante ghost che occupa area cliccabile ma non si vede */
+.ghost-start {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  font-size: 1.5rem;
+  color: #000;
+  width: 220px;
+  height: 64px;
+  display: block;
+  margin: 2rem auto;
+  box-shadow: none;
+}
+
+.ghost-start:hover,
+.ghost-start:focus,
+.ghost-start:active {
+  outline: none;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  color: #000;
+}
+
+.ghost-start:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Bottoni grandi per i placeholder */
+.big-next {
+  font-size: 1.25rem;
+  padding: 0.9rem 1.4rem;
+  box-shadow: none;
+}
+
+.big-next:hover,
+.big-next:focus,
+.big-next:active {
+  box-shadow: none;
+  outline: none;
+}
+
+/* Occhietto nascosto */
+#secret-eye {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  opacity: 0.08;
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  transition: opacity .25s ease;
+}
+
+#secret-eye:hover {
+  opacity: 0.35;
+}
+
+/* Dialog centrato */
+dialog::backdrop {
+  background: rgba(0, 0, 0, .55);
+}
+
+dialog article {
+  min-width: 280px;
+}
+
+/* Password gate */
+.gate-overlay {
+  position: fixed;
+  inset: 0;
+  padding: 2.5rem 1.5rem;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 12000;
+}
+
+.gate-overlay.is-hidden {
+  display: none;
+}
+
+.gate-card {
+  background: #101010;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 2rem 2.4rem 2.2rem;
+  width: min(360px, 90vw);
+  color: #f3f3f3;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  display: grid;
+  gap: 1rem;
+}
+
+.gate-card input {
+  text-align: center;
+  font-size: 1.1rem;
+  letter-spacing: 0.12rem;
+  text-transform: uppercase;
+}
+
+.gate-card button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.gate-feedback {
+  min-height: 1.5rem;
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.9rem;
+  color: #f0bd56;
+}
+
+.gate-feedback[data-variant="error"] {
+  color: #ff7a7a;
+}
+
+.gate-feedback[data-variant="warn"] {
+  color: #f0bd56;
+}
+
+.gate-hint {
+  font-size: 0.85rem;
+  margin: 0;
+  opacity: 0.65;
+  text-align: center;
+}
+
+/* Cifrario mutevole */
+.cipher-board {
+  width: 100%;
+  background: rgba(12, 12, 12, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.4rem;
+  display: grid;
+  gap: 0.8rem;
+  color: #f0f0f0;
+}
+
+.cipher-label {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.08rem;
+}
+
+.cipher-text {
+  font-family: "Fira Mono", "Courier New", monospace;
+  background: #050505;
+  border-radius: 10px;
+  padding: 1rem;
+  font-size: 1.3rem;
+  letter-spacing: 0.28rem;
+  text-align: center;
+  margin: 0;
+}
+
+.cipher-actions {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.cipher-history {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.2rem;
+  max-height: 160px;
+  overflow-y: auto;
+  font-family: "Fira Mono", "Courier New", monospace;
+  font-size: 0.85rem;
+}
+
+.cipher-form {
+  width: 100%;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.cipher-feedback {
+  min-height: 1.4rem;
+  font-size: 0.95rem;
+  color: #f0f0f0;
+}
+
+.cipher-feedback[data-state="error"] {
+  color: #ff7a7a;
+}
+
+.cipher-feedback[data-state="warn"] {
+  color: #f0bd56;
+}
+
+.cipher-feedback[data-state="ok"] {
+  color: #7ceaa1;
+}
+
+.cipher-hint {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  text-align: center;
+}
+
+.wiggle {
+  animation: cipher-wiggle 0.18s ease;
+}
+
+@keyframes cipher-wiggle {
+  0% { transform: translateX(0); }
+  33% { transform: translateX(-2px); }
+  66% { transform: translateX(2px); }
+  100% { transform: translateX(0); }
+}
+
+/* Slide puzzle */
+.puzzle-info {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.puzzle-info div {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+}
+
+.puzzle-info button {
+  margin-left: auto;
+}
+
+.slide-puzzle {
+  --puzzle-size: 4;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(var(--puzzle-size), minmax(62px, 1fr));
+  width: min(360px, 90vw);
+  aspect-ratio: 1;
+  background: rgba(0, 0, 0, 0.08);
+  padding: 6px;
+  border-radius: 12px;
+}
+
+.puzzle-tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  background-image: var(--tile-image, linear-gradient(135deg, #3e7bd0, #5be0dc));
+  background-size: calc(100% * var(--tile-size)) calc(100% * var(--tile-size));
+  background-position: calc((var(--tile-x) * 100%) / (var(--tile-size) - 1)) calc((var(--tile-y) * 100%) / (var(--tile-size) - 1));
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.puzzle-tile:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.puzzle-tile.is-empty {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: none;
+  opacity: 0.35;
+}
+
+.puzzle-status {
+  min-height: 1.5rem;
+  font-size: 1rem;
+}
+
+/* Secret attribute hunt */
+.secret-grid {
+  width: 100%;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.secret-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: transform .2s ease, border-color .2s ease;
+  position: relative;
+}
+
+.secret-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.secret-card h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.secret-controls {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.secret-form {
+  width: 100%;
+  max-width: 420px;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.secret-feedback {
+  min-height: 1.4rem;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.secret-feedback[data-state="error"] {
+  color: #ff7a7a;
+}
+
+.secret-feedback[data-state="warn"] {
+  color: #f0bd56;
+}
+
+.secret-feedback[data-state="ok"] {
+  color: #7ceaa1;
+}
+
+.secret-feedback[data-state="info"] {
+  color: #89cff0;
+}
+
+/* Mouse corridor */
+.maze-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.mouse-maze {
+  position: relative;
+  width: min(380px, 90vw);
+  height: min(280px, 70vh);
+  background: #410606;
+  border: 4px solid #900e0e;
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+.maze-segment {
+  position: absolute;
+  background: #0c6f3d;
+  border-radius: 14px;
+}
+
+.maze-start,
+.maze-finish {
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.maze-start {
+  left: 20px;
+  top: 30px;
+  background: #2ecc71;
+  color: #0c2a16;
+}
+
+.maze-finish {
+  right: 20px;
+  bottom: 20px;
+  background: #8e44ad;
+  color: #f5e9ff;
+}
+
+.maze-status {
+  min-height: 1.6rem;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.maze-dialog-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.maze-dialog-preview {
+  min-height: 120px;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+
+/* Alphabet lock */
+.lock-board {
+  width: 100%;
+  background: rgba(15, 15, 25, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.8rem;
+  display: grid;
+  gap: 1rem;
+  color: #f0f0f0;
+}
+
+.lock-display {
+  font-family: "Fira Mono", "Courier New", monospace;
+  font-size: 2rem;
+  letter-spacing: 0.4rem;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  text-align: center;
+}
+
+.lock-wheels {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.lock-wheel {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 0.6rem 0.8rem;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+}
+
+.lock-letter {
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-family: "Fira Mono", "Courier New", monospace;
+  color: #f6f6f6;
+}
+
+.lock-arrow {
+  width: 42px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background .15s ease, transform .15s ease;
+}
+
+.lock-arrow:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.lock-controls {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.lock-status {
+  min-height: 1.5rem;
+  text-align: center;
+  font-size: 1rem;
+}
+
+/* Confetti canvas deve restare sopra tutto */
+canvas.confetti-canvas {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none;
+  z-index: 13000 !important;
+}
+.puzzle-buttons {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.puzzle-buttons button {
+  flex: 1 1 150px;
+}
+
+.puzzle-preview {
+  width: 100%;
+  max-width: 320px;
+  display: grid;
+  gap: 0.75rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1.2rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.puzzle-preview h2 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.puzzle-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+}
+
+.puzzle-preview-grid span {
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+  padding: 0.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f5f5f5;
+}
+
+.puzzle-preview-grid .is-empty {
+  opacity: 0.25;
+}
+
+/* Slide puzzle layout tweaks */
+.puzzle-stage {
+  display: flex;
+  gap: 1.4rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.puzzle-wrapper {
+  position: relative;
+  display: grid;
+  gap: 0.85rem;
+  justify-items: center;
+}
+
+.puzzle-eye {
+  position: absolute;
+  top: -18px;
+  right: -18px;
+  background: transparent;
+  border: none;
+  font-size: 1.35rem;
+  cursor: pointer;
+  opacity: 0.25;
+  transition: opacity .2s ease, transform .2s ease;
+}
+
+.puzzle-eye:hover,
+.puzzle-eye:focus {
+  opacity: 0.82;
+  transform: scale(1.08);
+}
+
+.puzzle-stage .puzzle-preview {
+  flex: 0 0 160px;
+  padding: 0.9rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  display: grid;
+  gap: 0.45rem;
+  text-align: center;
+}
+
+.puzzle-stage .puzzle-preview h2 {
+  font-size: 0.95rem;
+  margin: 0;
+  opacity: 0.75;
+}
+
+.puzzle-stage .puzzle-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.28rem;
+}
+
+.puzzle-stage .puzzle-preview-grid span {
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.33);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  padding: 0.25rem 0;
+}
+
+.puzzle-stage .puzzle-preview-grid .is-empty {
+  opacity: 0.22;
+}
+
+@media (max-width: 640px) {
+  .puzzle-eye {
+    top: -14px;
+    right: -14px;
   }
-  
-  .bg-dark {
-    background: #000;
-    color: #000; /* testo invisibile di default */
+
+  .puzzle-stage .puzzle-preview {
+    flex-basis: 100%;
   }
-  
-  .container-center {
-    display: grid;
-    place-items: center;
-    min-height: 100vh;
-    padding: 2rem;
-  }
-  
-  .container-narrow {
-    max-width: 680px;
-    margin: 6vh auto;
-    padding: 1rem;
-  }
-  
-  .center-stack {
-    display: grid;
-    gap: 1.25rem;
-    justify-items: center;
-    text-align: center;
-  }
-  
-  /* Testo “quasi” invisibile, si nota solo selezionando */
-  .visually-dim {
-    color: #0a0a0a;
-  }
-  
-  /* Pulsante ghost che occupa area cliccabile ma non si vede */
-  .ghost-start {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    outline: none;
-    font-size: 1.5rem;
-    color: #000;        /* Testo nero → invisibile su sfondo nero */
-    width: 220px;       /* area cliccabile maggiore */
-    height: 64px;
-    display: block;
-    margin: 2rem auto;
-    box-shadow: none;
-  }
-  
-  .ghost-start:hover,
-  .ghost-start:focus,
-  .ghost-start:active {
-    outline: none;
-    border: none;
-    box-shadow: none;
-    background: transparent;
-    color: #000;
-  }
-  
-  /* Bottoni grandi per i placeholder */
-  .big-next {
-    font-size: 1.25rem;
-    padding: 0.9rem 1.4rem;
-    box-shadow: none;
-  }
-  
-  .big-next:hover,
-  .big-next:focus,
-  .big-next:active {
-    box-shadow: none;
-    outline: none;
-  }
-  
-  /* Occhietto nascosto: piccolissimo e trasparente in basso a destra */
-  #secret-eye {
-    position: fixed;
-    bottom: 12px;
-    right: 12px;
-    opacity: 0.08;
-    background: transparent;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-    transition: opacity .25s ease;
-  }
-  
-  #secret-eye:hover {
-    opacity: 0.35;
-  }
-  
-  /* Dialog centrato (usa <dialog> nativo) */
-  dialog::backdrop {
-    background: rgba(0,0,0,.55);
-  }
-  
-  dialog article {
-    min-width: 280px;
-  }
+}

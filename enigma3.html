@@ -3,21 +3,124 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Enigma 3</title>
+  <title>Enigma 3 - Attributi volatili</title>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=2025-09-24-01">
+  <script src="assets/app.js?v=2025-09-24-01"></script>
 </head>
-<body>
-  <main class="container-narrow center-stack">
-    <h1>Enigma 3</h1>
-    <p>Placeholder. (Enigma n°3 in arrivo.)</p>
-    <button class="big-next" onclick="goNext('enigma4.html')">Avanti</button>
+<body data-page="enigma3">
+  <script>initGate('enigma3', { requiredStep: 'enigma2' });</script>
+  <main class="container-narrow">
+    <article class="center-stack">
+      <header>
+        <h1>Enigma 3 - Metadati capricciosi</h1>
+        <p>Uno di questi elementi nasconde, in un attributo <code>data-*</code>, la parola chiave. Ogni errore fa ricominciare la caccia con un nuovo elemento e una nuova parola.</p>
+      </header>
+
+      <section class="secret-grid" id="secretGrid">
+        <div class="secret-card" data-role="card">
+          <h2>1</h2>
+          <p>Appunti di viaggio</p>
+        </div>
+        <div class="secret-card" data-role="card">
+          <h2>2</h2>
+          <p>Libro dei brindisi</p>
+        </div>
+        <div class="secret-card" data-role="card">
+          <h2>3</h2>
+          <p>Sacchetto misterioso</p>
+        </div>
+        <div class="secret-card" data-role="card">
+          <h2>4</h2>
+          <p>Specchio portatile</p>
+        </div>
+        <div class="secret-card" data-role="card">
+          <h2>5</h2>
+          <p>Lanterna di riserva</p>
+        </div><!-- TODO: Sostituire indizio 5 usando metadati reali dell'immagine dell'enigma 1 -->
+        <div class="secret-card" data-role="card">
+          <h2>6</h2>
+          <p>Cartoline dal futuro</p>
+        </div>
+      </section>
+
+      <div class="secret-controls">
+        <button type="button" id="shuffleSecret" class="secondary">Agita la stanza</button>
+        <small>Tip: ispeziona con attenzione (o con gli strumenti giusti) prima che sparisca di nuovo.</small>
+      </div>
+
+      <form id="secretForm" class="secret-form">
+        <label for="secretInput">Inserisci la parola nascosta</label>
+        <input id="secretInput" type="text" name="secret" autocomplete="off" spellcheck="false" placeholder="Scrivi qui" required>
+        <button type="submit">Svela</button>
+        <p id="secretFeedback" class="secret-feedback" aria-live="polite"></p>
+      </form>
+    </article>
   </main>
-  <script src="assets/app.js"></script>
-  <script src="assets/app.js?v=5"></script>
-<script>
-  // Deve aver completato enigma1
-  checkAccess("enigma3", "enigma2");
-</script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const grid = document.getElementById('secretGrid');
+      const form = document.getElementById('secretForm');
+      const input = document.getElementById('secretInput');
+      const feedback = document.getElementById('secretFeedback');
+      const shuffleBtn = document.getElementById('shuffleSecret');
+
+      if (!grid || !form || !input) return;
+
+      const words = ['lanterna', 'cometa', 'augurio', 'costellazione', 'girandola', 'polaris'];
+      let currentSecret = '';
+
+      const pickWord = () => words[Math.floor(Math.random() * words.length)];
+
+      const clearSecrets = () => {
+        grid.querySelectorAll('[data-secret]').forEach((el) => el.removeAttribute('data-secret'));
+      };
+
+      const plantSecret = () => {
+        clearSecrets();
+        const cards = Array.from(grid.querySelectorAll('[data-role="card"]'));
+        if (!cards.length) return;
+        const chosenCard = cards[Math.floor(Math.random() * cards.length)];
+        currentSecret = pickWord();
+        chosenCard.setAttribute('data-secret', currentSecret);
+      };
+
+      const normalize = (text) => (text || '').trim().toLowerCase();
+
+      const reshuffle = (reason = 'manual') => {
+        plantSecret();
+        if (feedback) {
+          feedback.textContent = reason === 'wrong' ? 'Il segreto e scappato altrove...' : 'Nuovo giro, nuova parola.';
+          feedback.dataset.state = reason === 'wrong' ? 'warn' : 'info';
+        }
+        input.value = '';
+        input.focus();
+      };
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const attempt = normalize(input.value);
+        if (!attempt) {
+          feedback.textContent = 'Serve scrivere qualcosa.';
+          feedback.dataset.state = 'warn';
+          return;
+        }
+        if (attempt === normalize(currentSecret)) {
+          feedback.textContent = 'Individuato! Avanza pure.';
+          feedback.dataset.state = 'ok';
+          setTimeout(() => goNext('enigma4.html', 'enigma4'), 500);
+          return;
+        }
+        feedback.textContent = 'Ops, ha cambiato nascondiglio.';
+        feedback.dataset.state = 'error';
+        reshuffle('wrong');
+      });
+
+      shuffleBtn?.addEventListener('click', () => reshuffle('manual'));
+
+      plantSecret();
+    });
+  </script>
 </body>
 </html>

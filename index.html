@@ -3,37 +3,67 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FG — FindGreetings</title>
+  <title>FG - FindGreetings</title>
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=2025-09-24-01">
+  <script src="assets/app.js?v=2025-09-24-01"></script>
 </head>
-<body class="bg-dark full-viewport">
+<body class="bg-dark full-viewport" data-page="index">
+  <script>initGate('index', { isStart: true });</script>
+
+  <div id="fgPasswordOverlay" class="gate-overlay is-hidden" hidden>
+    <article class="gate-card" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+      <header>
+        <h2 id="gateTitle">Chi bussa?</h2>
+      </header>
+      <p>Inserisci la chiave segreta per iniziare la caccia.</p>
+      <form id="fgPasswordForm" autocomplete="off">
+        <label class="visually-hidden" for="fgPasswordInput">Password</label>
+        <input id="fgPasswordInput" type="password" name="password" placeholder="Password" minlength="4" required autocomplete="off" spellcheck="false">
+        <p class="gate-feedback" aria-live="polite"></p>
+        <button type="submit" class="button-primary" data-role="password-submit">Entra</button>
+      </form>
+      <footer class="gate-hint">Suggerimento: Alessio ama gli enigmi (e le lanterne).</footer>
+    </article>
+  </div>
+
   <main class="container-center">
-    <!-- Testo quasi invisibile (nero su nero). Suggerimento: evidenzionando si vede -->
     <h1 class="visually-dim" style="user-select:text">Benvenuto nella sfida.</h1>
     <p class="visually-dim" style="user-select:text">Se leggi questo, sei sulla strada giusta.</p>
 
-    <!-- Zona cliccabile invisibile: avvia il gioco -->
-    <button class="ghost-start" aria-label="Inizia" title="Inizia" onclick="goNext('enigma1.html')">
+    <button class="ghost-start" data-role="ghost-start" aria-label="Inizia" title="Inizia" disabled>
       inizia
     </button>
   </main>
 
-  <!-- carica lo script del progetto -->
-  <script src="assets/app.js?v=1"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const startBtn = document.querySelector('[data-role="ghost-start"]');
+      document.body.dataset.gate = 'locked';
+      const unlockStart = () => {
+        document.body.dataset.gate = 'unlocked';
+        if (startBtn) {
+          startBtn.disabled = false;
+          startBtn.focus({ preventScroll: true });
+        }
+      };
 
-  <!-- fallback: se app.js non carica, definisco goNext qui -->
-  <script>
-    if (typeof window.goNext !== 'function') {
-      console.warn('Fallback goNext attivato: app.js non caricato o non globale');
-      window.goNext = function (nextPage) { window.location.href = nextPage; };
-    }
+      if (startBtn) {
+        startBtn.addEventListener('click', () => {
+          if (document.body.dataset.gate === 'unlocked') {
+            startFlow('enigma1.html', 'enigma1', { via: 'index-ghost' });
+          }
+        });
+      }
+
+      setupPasswordGate({
+        expected: 'lanterna',
+        cooldownMs: 12000,
+        onSuccess: unlockStart,
+        onFail: () => { document.body.dataset.gate = 'locked'; }
+      });
+    });
   </script>
-  <script>
-  // Quando carica l'index, resetta il progresso e crea nuovo token
-  sessionStorage.clear();
-  sessionStorage.setItem("fg_progress", "start");
-</script>
 </body>
 </html>

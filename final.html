@@ -5,142 +5,142 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Finale (?)</title>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=2025-09-24-01">
   <style>
-    /* Ogni occhietto è solo quanto l'emoji */
     .eye-btn {
-      position: fixed;            /* posizionamento assoluto sul viewport */
+      position: fixed;
       background: transparent;
       border: none;
       cursor: pointer;
-      font-size: 14px;            /* riduci/aumenta qui la dimensione dell'emoji */
+      font-size: 18px;
       padding: 0;
-      margin: 0;
-      line-height: 1;
-      width: 1.2em;
-      height: 1.2em;
+      width: 1.4em;
+      height: 1.4em;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      opacity: 0.12;
+      opacity: 0.14;
       transition: opacity .25s ease, transform .15s ease;
-      z-index: 9999;              /* sopra il resto dell'UI */
+      z-index: 9999;
+      clip-path: circle(45%);
     }
-    .eye-btn:hover { opacity: .65; transform: scale(1.25); }
 
-    /* Canvas dei confetti sempre sopra tutto, anche sopra dialog */
+    .eye-btn:hover {
+      opacity: .78;
+      transform: scale(1.22);
+    }
+
     canvas.confetti-canvas {
       position: fixed !important;
       inset: 0 !important;
       width: 100% !important;
       height: 100% !important;
       pointer-events: none;
-      z-index: 10000 !important;
+      z-index: 13000 !important;
     }
-    dialog::backdrop { background: rgba(0,0,0,.55); z-index: 9000; }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, .55);
+      z-index: 12000;
+    }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="assets/app.js?v=2025-09-24-01"></script>
 </head>
-<body>
+<body data-page="final">
+  <script>initGate('final', { requiredStep: 'enigma5' });</script>
   <main class="container-narrow center-stack">
-    <h1>Congratulazioni… forse.</h1>
-    <p>Hai completato gli enigmi. Ma mi sa che stavolta vinco io.</p>
+    <h1>Congratulazioni... forse.</h1>
+    <p>Hai completato gli enigmi. Ora devi scegliere quale occhio sa davvero dove guardare.</p>
   </main>
 
-  <!-- Popup Auguri -->
   <dialog id="auguriDialog">
     <article>
-      <header><h2>Ok, ci ho provato…</h2></header>
-      <p><strong>Buon compleanno, Alessio!</strong><br> Anche stavolta vinci te. 🎉</p>
-      <footer><button onclick="document.getElementById('auguriDialog').close()">Chiudi</button></footer>
+      <header><h2>Ok, ci ho provato...</h2></header>
+      <p><strong>Buon compleanno, Alessio!</strong><br> Anche stavolta vinci te.</p>
+      <footer><button type="button" data-role="close-auguri">Chiudi</button></footer>
     </article>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <script src="assets/app.js?v=4">
-    checkAccess("final", "enigma5");
-  </script>
   <script>
-    /* ---- B O U N D S  (adatta alla tua "zona rossa") ----
-       In percentuali di viewport:
-       X_MIN_VW / X_MAX_VW -> orizzontale (0 a 100)
-       Y_MIN_VH / Y_MAX_VH -> verticale   (0 a 100)
-       Default: basso-destro ~ dal 68% al 97% in x, 60%..94% in y
-    ------------------------------------------------------- */
-    const X_MIN_VW = 10, X_MAX_VW = 90;
-    const Y_MIN_VH = 40, Y_MAX_VH = 90;
+    document.addEventListener('DOMContentLoaded', () => {
+      const TOTAL_EYES = 12;
+      // TODO: Implementare contatore tentativi (max 3 errori) e feedback visivo/testuale
+      const MIN_DIST = 34;
+      const VIEWPORT_PADDING = 48;
+      const auguriDialog = document.getElementById('auguriDialog');
+      const closeBtn = auguriDialog?.querySelector('[data-role="close-auguri"]');
 
-    // Quanti occhietti e distanza minima tra loro (px) per non sovrapporsi troppo
-    const TOTAL_EYES = 10;
-    const MIN_DIST_PX = 28;
+      const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+      const rand = (min, max) => Math.random() * (max - min) + min;
 
-    // Forza z-index del canvas generato dai confetti
-    const _confetti = window.confetti;
-    window.confetti = function(opts){
-      const res = _confetti(opts);
-      const c = document.querySelector('canvas');
-      if (c) c.classList.add('confetti-canvas');
-      return res;
-    };
+      const ensureCanvasClass = () => {
+        const canvases = document.querySelectorAll('canvas');
+        canvases.forEach((canvas) => canvas.classList.add('confetti-canvas'));
+      };
 
-    function randInRange(min, max){ return Math.random() * (max - min) + min; }
+      const patchConfetti = () => {
+        if (typeof window.confetti !== 'function') return;
+        const original = window.confetti;
+        window.confetti = function () {
+          const result = original.apply(this, arguments);
+          setTimeout(ensureCanvasClass, 0);
+          setTimeout(ensureCanvasClass, 200);
+          return result;
+        };
+      };
 
-    // Converte vw/vh -> px
-    function vw(v){ return window.innerWidth * (v/100); }
-    function vh(v){ return window.innerHeight * (v/100); }
+      const spawnEyes = () => {
+        const winnerIndex = Math.floor(Math.random() * TOTAL_EYES);
+        const placed = [];
+        for (let i = 0; i < TOTAL_EYES; i += 1) {
+          const btn = document.createElement('button');
+          btn.className = 'eye-btn';
+          btn.type = 'button';
+          btn.textContent = String.fromCodePoint(0x1F441);
 
-    // Evita sovrapposizioni grossolane
-    function tooClose(x, y, placed){
-      for (const p of placed){
-        const dx = x - p.x, dy = y - p.y;
-        if (Math.hypot(dx, dy) < MIN_DIST_PX) return true;
-      }
-      return false;
-    }
+          let attempts = 0;
+          let x = 0;
+          let y = 0;
+          const maxWidth = Math.max(VIEWPORT_PADDING, window.innerWidth - VIEWPORT_PADDING);
+          const maxHeight = Math.max(VIEWPORT_PADDING, window.innerHeight - VIEWPORT_PADDING);
+          do {
+            x = clamp(rand(VIEWPORT_PADDING, maxWidth), VIEWPORT_PADDING, maxWidth);
+            y = clamp(rand(VIEWPORT_PADDING, maxHeight), VIEWPORT_PADDING, maxHeight);
+            attempts += 1;
+          } while (attempts < 40 && placed.some((p) => Math.hypot(p.x - x, p.y - y) < MIN_DIST));
 
-    // Posiziona N occhietti in posizioni random entro i bounds
-    (function placeEyes(){
-      const placed = [];
-      const winnerIndex = Math.floor(Math.random() * TOTAL_EYES);
+          btn.style.left = x + 'px';
+          btn.style.top = y + 'px';
+          placed.push({ x, y });
 
-      for (let i = 0; i < TOTAL_EYES; i++){
-        const btn = document.createElement('button');
-        btn.className = 'eye-btn';
-        btn.innerHTML = '&#128065;'; // emoji
-
-        // calcola posizione random entro i bounds (in px), evitando bordi
-        let attempts = 0, x, y;
-        do {
-          const leftPx = vw(randInRange(X_MIN_VW, X_MAX_VW));
-          const topPx  = vh(randInRange(Y_MIN_VH, Y_MAX_VH));
-          // centra l'emoji sul punto e evita bordo destro/inferiore
-          x = Math.min(leftPx, window.innerWidth  - 24);
-          y = Math.min(topPx,  window.innerHeight - 24);
-          attempts++;
-        } while (attempts < 40 && tooClose(x, y, placed));
-
-        btn.style.left = `${x}px`;
-        btn.style.top  = `${y}px`;
-        placed.push({x, y});
-
-        if (i === winnerIndex) {
-          btn.addEventListener('click', () => showAuguri());
-        } else {
-          btn.addEventListener('click', () => resetToStart());
+          if (i === winnerIndex) {
+            btn.addEventListener('click', () => {
+              if (typeof showAuguri === 'function') {
+                showAuguri();
+                ensureCanvasClass();
+              }
+            });
+          } else {
+            btn.addEventListener('click', () => resetToStart()); // TODO: Integrare decremento tentativi e gestione fallimenti
+          }
+          document.body.appendChild(btn);
         }
-        document.body.appendChild(btn);
-      }
-    })();
+      };
 
-    // Click "troll" in zona rossa (se vuole provare a indovinare alla cieca)
-    document.body.addEventListener('click', (ev) => {
-      if (ev.target.closest('.eye-btn')) return;
-      const x = ev.clientX, y = ev.clientY;
-      const xMin = vw(X_MIN_VW), xMax = vw(X_MAX_VW);
-      const yMin = vh(Y_MIN_VH), yMax = vh(Y_MAX_VH);
-      if (x >= xMin && x <= xMax && y >= yMin && y <= yMax) {
-        resetToStart();
-      }
-    }, true);
+      const resetEyes = () => {
+        document.querySelectorAll('.eye-btn').forEach((node) => node.remove());
+        spawnEyes();
+      };
+
+      closeBtn?.addEventListener('click', () => auguriDialog?.close());
+
+      patchConfetti();
+      spawnEyes();
+      window.addEventListener('resize', () => {
+        window.requestAnimationFrame(() => resetEyes());
+      });
+    });
   </script>
 </body>
 </html>

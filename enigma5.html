@@ -3,20 +3,119 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Enigma 5</title>
+  <title>Enigma 5 - Serratura alfabetica</title>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=2025-09-24-01">
+  <script src="assets/app.js?v=2025-09-24-01"></script>
 </head>
-<body>
-  <main class="container-narrow center-stack">
-    <h1>Enigma 5</h1>
-    <p>Ultimo placeholder prima del “falso finale”.</p>
-    <button class="big-next" onclick="goNext('final.html')">Vai al finale</button>
+<body data-page="enigma5">
+  <script>initGate('enigma5', { requiredStep: 'enigma4' });</script>
+  <main class="container-narrow">
+    <article class="center-stack">
+      <header>
+        <h1>Enigma 5 - Serratura alfabetica</h1>
+        <p>Allinea i cinque dischi per comporre la parola giusta. Gli indizi sono sparsi nei messaggi precedenti.</p>
+      </header>
+
+      <section class="lock-board">
+        <div class="lock-display" id="lockDisplay">- - - - -</div>
+        <div class="lock-wheels" id="lockWheels" role="group" aria-label="Dischi rotanti"></div>
+        <div class="lock-controls">
+          <button type="button" id="lockShuffle" class="secondary">Mescola</button>
+          <span>Rotazioni: <strong id="lockMoves">0</strong></span>
+        </div>
+        <p id="lockStatus" class="lock-status" aria-live="polite">Suggerimento: la parola finale e il cuore della festa.</p>
+      </section>
+    </article>
   </main>
-  <script src="assets/app.js"></script>
-  <script src="assets/app.js?v=5"></script>
-<script>
-  checkAccess("enigma5", "enigma4");
-</script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const TARGET = 'FESTA';
+      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+      const wheelsContainer = document.getElementById('lockWheels');
+      const displayEl = document.getElementById('lockDisplay');
+      const statusEl = document.getElementById('lockStatus');
+      const shuffleBtn = document.getElementById('lockShuffle');
+      const movesEl = document.getElementById('lockMoves');
+
+      if (!wheelsContainer || !displayEl || !statusEl) return;
+
+      let current = [];
+      let moves = 0;
+
+      const updateDisplay = () => {
+        displayEl.textContent = current.join(' ');
+        movesEl.textContent = moves;
+      };
+
+      const checkSolution = () => {
+        if (current.join('') === TARGET) {
+          statusEl.textContent = 'Perfetto! La serratura si apre.';
+          setTimeout(() => goNext('final.html', 'final'), 500);
+        }
+      };
+
+      const rotate = (index, direction) => {
+        const letters = alphabet;
+        const currentIdx = letters.indexOf(current[index]);
+        const nextIdx = (currentIdx + direction + letters.length) % letters.length;
+        current[index] = letters[nextIdx];
+        const faces = wheelsContainer.querySelectorAll('.lock-letter');
+        if (faces[index]) {
+          faces[index].textContent = current[index];
+        }
+        moves += 1;
+        updateDisplay();
+        checkSolution();
+      };
+
+      const buildWheel = (letter, index) => {
+        const wheel = document.createElement('div');
+        wheel.className = 'lock-wheel';
+
+        const up = document.createElement('button');
+        up.type = 'button';
+        up.className = 'lock-arrow up';
+        up.setAttribute('aria-label', 'Incrementa disco ' + (index + 1));
+        up.textContent = '^';
+        up.addEventListener('click', () => rotate(index, 1));
+
+        const face = document.createElement('div');
+        face.className = 'lock-letter';
+        face.textContent = letter;
+
+        const down = document.createElement('button');
+        down.type = 'button';
+        down.className = 'lock-arrow down';
+        down.setAttribute('aria-label', 'Decrementa disco ' + (index + 1));
+        down.textContent = 'v';
+        down.addEventListener('click', () => rotate(index, -1));
+
+        wheel.append(up, face, down);
+        return wheel;
+      };
+
+      const renderWheels = () => {
+        wheelsContainer.innerHTML = '';
+        current.forEach((letter, index) => {
+          const wheel = buildWheel(letter, index);
+          wheelsContainer.appendChild(wheel);
+        });
+      };
+
+      const shuffle = () => {
+        current = TARGET.split('').map(() => alphabet[Math.floor(Math.random() * alphabet.length)]);
+        moves = 0;
+        renderWheels();
+        updateDisplay();
+        statusEl.textContent = 'Allinea le lettere con le frecce.';
+      };
+
+      shuffleBtn?.addEventListener('click', () => shuffle());
+
+      shuffle();
+    });
+  </script>
 </body>
 </html>
