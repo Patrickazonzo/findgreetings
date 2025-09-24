@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Finale (?)</title>
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    /* Ogni occhietto è solo quanto l'emoji */
+    .eye-btn {
+      position: fixed;            /* posizionamento assoluto sul viewport */
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;            /* riduci/aumenta qui la dimensione dell'emoji */
+      padding: 0;
+      margin: 0;
+      line-height: 1;
+      width: 1.2em;
+      height: 1.2em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.12;
+      transition: opacity .25s ease, transform .15s ease;
+      z-index: 9999;              /* sopra il resto dell'UI */
+    }
+    .eye-btn:hover { opacity: .65; transform: scale(1.25); }
+
+    /* Canvas dei confetti sempre sopra tutto, anche sopra dialog */
+    canvas.confetti-canvas {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      pointer-events: none;
+      z-index: 10000 !important;
+    }
+    dialog::backdrop { background: rgba(0,0,0,.55); z-index: 9000; }
+  </style>
+</head>
+<body>
+  <main class="container-narrow center-stack">
+    <h1>Congratulazioni… forse.</h1>
+    <p>Hai completato gli enigmi. Ma mi sa che stavolta vinco io.</p>
+  </main>
+
+  <!-- Popup Auguri -->
+  <dialog id="auguriDialog">
+    <article>
+      <header><h2>Ok, ci ho provato…</h2></header>
+      <p><strong>Buon compleanno, Alessio!</strong><br> Anche stavolta vinci te. 🎉</p>
+      <footer><button onclick="document.getElementById('auguriDialog').close()">Chiudi</button></footer>
+    </article>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="assets/app.js?v=4">
+    checkAccess("final", "enigma5");
+  </script>
+  <script>
+    /* ---- B O U N D S  (adatta alla tua "zona rossa") ----
+       In percentuali di viewport:
+       X_MIN_VW / X_MAX_VW -> orizzontale (0 a 100)
+       Y_MIN_VH / Y_MAX_VH -> verticale   (0 a 100)
+       Default: basso-destro ~ dal 68% al 97% in x, 60%..94% in y
+    ------------------------------------------------------- */
+    const X_MIN_VW = 10, X_MAX_VW = 90;
+    const Y_MIN_VH = 40, Y_MAX_VH = 90;
+
+    // Quanti occhietti e distanza minima tra loro (px) per non sovrapporsi troppo
+    const TOTAL_EYES = 10;
+    const MIN_DIST_PX = 28;
+
+    // Forza z-index del canvas generato dai confetti
+    const _confetti = window.confetti;
+    window.confetti = function(opts){
+      const res = _confetti(opts);
+      const c = document.querySelector('canvas');
+      if (c) c.classList.add('confetti-canvas');
+      return res;
+    };
+
+    function randInRange(min, max){ return Math.random() * (max - min) + min; }
+
+    // Converte vw/vh -> px
+    function vw(v){ return window.innerWidth * (v/100); }
+    function vh(v){ return window.innerHeight * (v/100); }
+
+    // Evita sovrapposizioni grossolane
+    function tooClose(x, y, placed){
+      for (const p of placed){
+        const dx = x - p.x, dy = y - p.y;
+        if (Math.hypot(dx, dy) < MIN_DIST_PX) return true;
+      }
+      return false;
+    }
+
+    // Posiziona N occhietti in posizioni random entro i bounds
+    (function placeEyes(){
+      const placed = [];
+      const winnerIndex = Math.floor(Math.random() * TOTAL_EYES);
+
+      for (let i = 0; i < TOTAL_EYES; i++){
+        const btn = document.createElement('button');
+        btn.className = 'eye-btn';
+        btn.innerHTML = '&#128065;'; // emoji
+
+        // calcola posizione random entro i bounds (in px), evitando bordi
+        let attempts = 0, x, y;
+        do {
+          const leftPx = vw(randInRange(X_MIN_VW, X_MAX_VW));
+          const topPx  = vh(randInRange(Y_MIN_VH, Y_MAX_VH));
+          // centra l'emoji sul punto e evita bordo destro/inferiore
+          x = Math.min(leftPx, window.innerWidth  - 24);
+          y = Math.min(topPx,  window.innerHeight - 24);
+          attempts++;
+        } while (attempts < 40 && tooClose(x, y, placed));
+
+        btn.style.left = `${x}px`;
+        btn.style.top  = `${y}px`;
+        placed.push({x, y});
+
+        if (i === winnerIndex) {
+          btn.addEventListener('click', () => showAuguri());
+        } else {
+          btn.addEventListener('click', () => resetToStart());
+        }
+        document.body.appendChild(btn);
+      }
+    })();
+
+    // Click "troll" in zona rossa (se vuole provare a indovinare alla cieca)
+    document.body.addEventListener('click', (ev) => {
+      if (ev.target.closest('.eye-btn')) return;
+      const x = ev.clientX, y = ev.clientY;
+      const xMin = vw(X_MIN_VW), xMax = vw(X_MAX_VW);
+      const yMin = vh(Y_MIN_VH), yMax = vh(Y_MAX_VH);
+      if (x >= xMin && x <= xMax && y >= yMin && y <= yMax) {
+        resetToStart();
+      }
+    }, true);
+  </script>
+</body>
+</html>

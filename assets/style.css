@@ -1,0 +1,99 @@
+/* Layout di base */
+.full-viewport {
+    min-height: 100vh;
+  }
+  
+  .bg-dark {
+    background: #000;
+    color: #000; /* testo invisibile di default */
+  }
+  
+  .container-center {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  
+  .container-narrow {
+    max-width: 680px;
+    margin: 6vh auto;
+    padding: 1rem;
+  }
+  
+  .center-stack {
+    display: grid;
+    gap: 1.25rem;
+    justify-items: center;
+    text-align: center;
+  }
+  
+  /* Testo “quasi” invisibile, si nota solo selezionando */
+  .visually-dim {
+    color: #0a0a0a;
+  }
+  
+  /* Pulsante ghost che occupa area cliccabile ma non si vede */
+  .ghost-start {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    font-size: 1.5rem;
+    color: #000;        /* Testo nero → invisibile su sfondo nero */
+    width: 220px;       /* area cliccabile maggiore */
+    height: 64px;
+    display: block;
+    margin: 2rem auto;
+    box-shadow: none;
+  }
+  
+  .ghost-start:hover,
+  .ghost-start:focus,
+  .ghost-start:active {
+    outline: none;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    color: #000;
+  }
+  
+  /* Bottoni grandi per i placeholder */
+  .big-next {
+    font-size: 1.25rem;
+    padding: 0.9rem 1.4rem;
+    box-shadow: none;
+  }
+  
+  .big-next:hover,
+  .big-next:focus,
+  .big-next:active {
+    box-shadow: none;
+    outline: none;
+  }
+  
+  /* Occhietto nascosto: piccolissimo e trasparente in basso a destra */
+  #secret-eye {
+    position: fixed;
+    bottom: 12px;
+    right: 12px;
+    opacity: 0.08;
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    transition: opacity .25s ease;
+  }
+  
+  #secret-eye:hover {
+    opacity: 0.35;
+  }
+  
+  /* Dialog centrato (usa <dialog> nativo) */
+  dialog::backdrop {
+    background: rgba(0,0,0,.55);
+  }
+  
+  dialog article {
+    min-width: 280px;
+  }
