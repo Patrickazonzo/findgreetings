@@ -1,4 +1,5 @@
-(() => {`n  // TODO: Considerare una strategia di offuscamento/build per rendere piu arduo il reverse engineering del flusso JS.
+(() => {
+  // TODO: Considerare una strategia di offuscamento/build per rendere piu arduo il reverse engineering del flusso JS.
   const FG = {
     VERSION: '2025-09-24-01',
     STORAGE_KEY: 'fg_state',
@@ -242,7 +243,8 @@
     globalObserver.observe(document.body, { childList: true, subtree: true });
   }
 
-  const setupPasswordGate = (config = {}) => {`n    // TODO: Integrare popup con immagini/suoni quando gli utenti sbagliano ripetutamente la password
+  const setupPasswordGate = (config = {}) => {
+    // TODO: Integrare popup con immagini/suoni quando gli utenti sbagliano ripetutamente la password
     const overlay = document.querySelector(config.overlaySelector || '#fgPasswordOverlay');
     const form = overlay?.querySelector('form');
     const input = overlay?.querySelector(config.inputSelector || 'input[type="password"],input[type="text"]');
