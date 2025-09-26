@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8" />
@@ -20,14 +20,14 @@
           <button type="button" id="lockShuffle" class="secondary">Mescola</button>
           <span>Rotazioni: <strong id="lockMoves">0</strong></span>
         </div>
-        <p id="lockStatus" class="lock-status" aria-live="polite">Suggerimento: la parola finale e il cuore della festa.</p>
+        <p id="lockStatus" class="lock-status" aria-live="polite">Per andare avanti, bisogna andare indietro.</p>
       </section>
     </article>
   </main>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const TARGET = 'FESTA';
+      const TARGET = 'ABCDZ';
       const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
       const wheelsContainer = document.getElementById('lockWheels');
       const displayEl = document.getElementById('lockDisplay');
@@ -74,7 +74,7 @@
         up.type = 'button';
         up.className = 'lock-arrow up';
         up.setAttribute('aria-label', 'Incrementa disco ' + (index + 1));
-        up.textContent = '^';
+        up.textContent = String.fromCodePoint(0x25B2);
         up.addEventListener('click', () => rotate(index, 1));
 
         const face = document.createElement('div');
@@ -85,7 +85,7 @@
         down.type = 'button';
         down.className = 'lock-arrow down';
         down.setAttribute('aria-label', 'Decrementa disco ' + (index + 1));
-        down.textContent = 'v';
+        down.textContent = String.fromCodePoint(0x25BC);
         down.addEventListener('click', () => rotate(index, -1));
 
         wheel.append(up, face, down);
@@ -105,7 +105,7 @@
         moves = 0;
         renderWheels();
         updateDisplay();
-        statusEl.textContent = 'Allinea le lettere con le frecce.';
+        statusEl.textContent = 'Per andare avanti, bisogna andare indietro.';
       };
 
       shuffleBtn?.addEventListener('click', () => shuffle());
@@ -115,4 +115,9 @@
   </script>
 </body>
 </html>
+
+
+
+
+
 

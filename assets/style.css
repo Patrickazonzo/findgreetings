@@ -1,4 +1,3 @@
-﻿
 html.maze-no-scroll,
 body.maze-no-scroll {
   overflow: hidden;
@@ -477,6 +476,8 @@ dialog article {
   border-radius: 22px;
   box-shadow: 0 36px 64px rgba(0, 0, 0, 0.45);
   transition: opacity 0.25s ease;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .maze-card.is-faded {
@@ -488,6 +489,8 @@ dialog article {
   font-size: 1.02rem;
   font-weight: 600;
   color: #f0f0f0;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .maze-wrapper {
@@ -551,6 +554,8 @@ dialog article {
   text-align: center;
   font-size: 1rem;
   color: #f6f6f6;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .maze-dialog-body {
@@ -614,15 +619,20 @@ dialog article {
 }
 
 .lock-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 42px;
   height: 32px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
-  font-size: 1rem;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0;
   cursor: pointer;
-  transition: background .15s ease, transform .15s ease;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .lock-arrow:hover {
@@ -813,5 +823,4 @@ body[data-page="enigma5"] .container-narrow {
   padding-inline: 1.25rem;
   box-sizing: border-box;
 }
-
 

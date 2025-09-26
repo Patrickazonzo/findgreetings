@@ -57,8 +57,9 @@
     finalExtras: [],
     failEffects: [
       {
+        title: 'INDIETRO',
         audio: `${MEDIA_BASE}crow.mp3`,
-        visual: { type: 'image', src: `${MEDIA_BASE}shockFace.jpg`, alt: 'Illustrazione shock del labirinto di enigma 4.' },
+        visual: { type: 'image', src: `${MEDIA_BASE}indietro.jpg`, alt: 'Illustrazione shock del labirinto di enigma 4 (e chiave per il 5... ).' },
         autoCloseMs: 4200,
         closeLabel: 'Riprovo',
       },
@@ -89,8 +90,10 @@
     try {
       let audio = audioCache.get(src);
       if (opts.allowOverlap && audio && !audio.paused) {
+        title: 'INDIETRO',
         audio = audio.cloneNode(true);
       } else if (!audio) {
+        title: 'INDIETRO',
         audio = new Audio(src);
         audio.preload = 'auto';
         audioCache.set(src, audio);
@@ -166,6 +169,13 @@
 
     const panel = document.createElement('div');
     panel.style.cssText = 'background:#121212;color:#f6f6f6;padding:18px 22px;border-radius:14px;max-width:min(92vw,420px);width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.45);text-align:center;';
+
+    if (effect.title) {
+      const heading = document.createElement('h2');
+      heading.textContent = effect.title;
+      heading.style.cssText = 'margin:0 0 12px;font-size:1.15rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;';
+      panel.appendChild(heading);
+    }
 
     let mediaNode = null;
     if (effect.visual?.type === 'video') {
@@ -707,6 +717,13 @@
     if (!maze || !statusEl || !startEl || !finishEl || maze.dataset.enigmaReady === 'true') {
       return;
     }
+    const blockSelection = (node) => {
+      if (!node) return;
+      node.addEventListener('selectstart', (event) => event.preventDefault());
+    };
+
+    [maze, statusEl, startEl, finishEl, card].forEach(blockSelection);
+
 
     maze.dataset.enigmaReady = 'true';
 
