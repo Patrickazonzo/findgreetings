@@ -139,6 +139,16 @@
     return list[index];
   };
 
+  const shuffleCopy = (list) => {
+    if (!Array.isArray(list)) return [];
+    const copy = list.slice();
+    for (let i = copy.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  };
+
   const ACTIVE_MEDIA_POPUPS = new Map();
 
   const showMediaPopup = (effect, options = {}) => {
@@ -605,6 +615,156 @@
     }
   };
 
+  const initEnigma1 = () => {
+    if (document.body?.dataset.page !== 'enigma1') return;
+
+    const cipherTextEl = document.getElementById('cipherText');
+    const form = document.getElementById('cipherForm');
+    const answerInput = document.getElementById('cipherAnswer');
+    const feedbackEl = document.getElementById('cipherFeedback');
+
+    if (!cipherTextEl || !form || !answerInput || !feedbackEl || cipherTextEl.dataset.enigmaReady === 'true') {
+      return;
+    }
+
+    cipherTextEl.dataset.enigmaReady = 'true';
+
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    const normalize = (text) => (text || '').replace(/[^a-z]/gi, '').toLowerCase();
+
+    const encode = (plain, shift) => {
+      const upper = plain.toUpperCase();
+      return Array.from(upper).map((char) => {
+        const idx = alphabet.indexOf(char);
+        if (idx === -1) return char;
+        const newIdx = (idx + shift + 26) % 26;
+        return alphabet[newIdx];
+      }).join('');
+    };
+
+    const randomShift = () => {
+      let shift = 0;
+      while (shift === 0) {
+        shift = Math.floor(Math.random() * 25) + 1;
+        if (Math.random() < 0.5) shift *= -1;
+      }
+      return shift;
+    };
+
+    const formatChunks = (text) => text.match(/.{1,4}/g)?.join(' ') || text;
+
+    let currentPhase = 'phase1';
+    let phase2Target = null;
+
+    const applyPhaseTag = () => {
+      cipherTextEl.dataset.phase = currentPhase;
+    };
+
+    const animateBoard = () => {
+      cipherTextEl.classList.add('wiggle');
+      setTimeout(() => cipherTextEl.classList.remove('wiggle'), 180);
+    };
+
+    const PHASE1_TARGET = 'ATTENTO A QUELLO CHE VEDI';
+    const phase1TargetNormalized = normalize(PHASE1_TARGET);
+
+    const phase2Catalog = [
+      { id: 'mock-1', plain: 'SCEMO CHI DECODIFICA' },
+      { id: 'mock-2', plain: 'MA GUARDA CHE TENACIA' },
+      { id: 'mock-3', plain: 'STAI ANCORA PROVANDO DAVVERO' },
+      { id: 'mock-4', plain: 'IL SEGRETO NON E QUI TRANQUILLO' },
+      { id: 'mock-5', plain: 'OK HAI VINTO PASSA PURE ADESSO' },
+    ].map((item) => Object.assign({}, item, { normalized: normalize(item.plain) }));
+
+    const rollCipher = (reason = 'auto') => {
+      if (currentPhase === 'phase1') {
+        const encoded = formatChunks(encode(phase1TargetNormalized, randomShift()));
+        cipherTextEl.textContent = encoded;
+      } else {
+        const order = shuffleCopy(phase2Catalog);
+        const lines = order.map((item) => {
+          const encoded = formatChunks(encode(item.normalized, randomShift()));
+          return encoded;
+        });
+        cipherTextEl.textContent = lines.join('\n\n');
+      }
+
+      if (reason === 'typing' || reason === 'click') {
+        animateBoard();
+      }
+    };
+
+    const startPhase2 = () => {
+      currentPhase = 'phase2';
+      phase2Target = pickRandom(phase2Catalog);
+      applyPhaseTag();
+      feedbackEl.textContent = 'Davvero pensavi fosse finita? Decifra quella giusta fra le cinque.';
+      feedbackEl.dataset.state = 'warn';
+      answerInput.value = '';
+      rollCipher('phase2-init');
+      setTimeout(() => {
+        if (typeof answerInput.focus === 'function') {
+          answerInput.focus();
+        }
+      }, 150);
+    };
+
+    const handleSubmit = (event) => {
+      event.preventDefault();
+      const attempt = normalize(answerInput.value);
+      if (!attempt) {
+        feedbackEl.textContent = 'Serve scrivere qualcosa.';
+        feedbackEl.dataset.state = 'warn';
+        return;
+      }
+
+      if (currentPhase === 'phase1') {
+        if (attempt === phase1TargetNormalized) {
+          startPhase2();
+          return;
+        }
+        feedbackEl.textContent = 'Nope. Il cifrario si confonde e cambia di nuovo.';
+        feedbackEl.dataset.state = 'error';
+        answerInput.focus();
+        rollCipher('manual');
+        return;
+      }
+
+      if (attempt === phase2Target?.normalized) {
+        feedbackEl.textContent = 'Ok, te lo sei guadagnato.';
+        feedbackEl.dataset.state = 'ok';
+        setTimeout(() => goNext('enigma2.html', 'enigma2'), 500);
+        return;
+      }
+
+      feedbackEl.textContent = 'Nemmeno questa volta. Tutto si rimescola di nuovo.';
+      feedbackEl.dataset.state = 'error';
+      answerInput.select();
+      rollCipher('manual');
+    };
+
+    form.addEventListener('submit', handleSubmit);
+    answerInput.addEventListener('input', () => rollCipher('typing'));
+    answerInput.addEventListener('click', () => rollCipher('click'));
+    cipherTextEl.addEventListener('click', () => rollCipher('click'));
+    cipherTextEl.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        rollCipher('click');
+      }
+    });
+
+    applyPhaseTag();
+    rollCipher('init');
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEnigma1, { once: true });
+  } else {
+    initEnigma1();
+  }
+
   window.resetToStart = resetToStart;
   window.checkAnswer = checkAnswer;
   window.showAuguri = showAuguri;
@@ -613,3 +773,4 @@
   window.startFlow = startFlow;
   window.setupPasswordGate = setupPasswordGate;
 })();
+

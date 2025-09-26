@@ -12,12 +12,8 @@
   <script>initGate('enigma1', { requiredStep: 'start' });</script>
   <main class="container-narrow">
     <article class="center-stack">
-      <header>
-        <h1>Enigma 1 - Cifrario mutevole</h1>
-      </header>
-
-      <section class="cipher-board">
-        <pre id="cipherText" class="cipher-text">?</pre>
+      <section class="cipher-board" aria-live="polite">
+        <pre id="cipherText" class="cipher-text" tabindex="0">?</pre>
       </section>
 
       <form id="cipherForm" class="cipher-form">
@@ -28,77 +24,6 @@
       </form>
 
     </article>
-  </main>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const TARGET = 'LANTERNA SUL BALCONE';
-      const targetNormalized = TARGET.replace(/[^a-z]/gi, '').toLowerCase();
-
-      const cipherTextEl = document.getElementById('cipherText');
-      const form = document.getElementById('cipherForm');
-      const answerInput = document.getElementById('cipherAnswer');
-      const feedbackEl = document.getElementById('cipherFeedback');
-
-      if (!cipherTextEl || !form || !answerInput || !feedbackEl) return;
-
-      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-      const normalize = (text) => (text || '').replace(/[^a-z]/gi, '').toLowerCase();
-
-      const encode = (plain, shift) => {
-        const upper = plain.toUpperCase();
-        return Array.from(upper).map((char) => {
-          const idx = alphabet.indexOf(char);
-          if (idx === -1) return char;
-          const newIdx = (idx + shift + 26) % 26;
-          return alphabet[newIdx];
-        }).join('');
-      };
-
-      const randomShift = () => {
-        let shift = 0;
-        while (shift === 0) {
-          shift = Math.floor(Math.random() * 25) + 1; // 1..25
-          if (Math.random() < 0.5) shift *= -1;
-        }
-        return shift;
-      };
-
-      const rollCipher = (reason = 'auto') => {
-        const encoded = encode(targetNormalized, randomShift()).match(/.{1,4}/g)?.join(' ') || '';
-        cipherTextEl.textContent = encoded;
-        if (reason === 'typing') {
-          cipherTextEl.classList.add('wiggle');
-          setTimeout(() => cipherTextEl.classList.remove('wiggle'), 180);
-        }
-      };
-
-      const handleSubmit = (event) => {
-        event.preventDefault();
-        const attempt = normalize(answerInput.value);
-        if (!attempt) {
-          feedbackEl.textContent = 'Serve scrivere qualcosa.';
-          feedbackEl.dataset.state = 'warn';
-          return;
-        }
-        if (attempt === targetNormalized) {
-          feedbackEl.textContent = 'Perfetto! Avanti cosi.';
-          feedbackEl.dataset.state = 'ok';
-          setTimeout(() => goNext('enigma2.html', 'enigma2'), 400);
-          return;
-        }
-        feedbackEl.textContent = 'Nope. Il cifrario si confonde e cambia di nuovo.';
-        feedbackEl.dataset.state = 'error';
-        answerInput.focus();
-        rollCipher('manual');
-      };
-
-      form.addEventListener('submit', handleSubmit);
-      answerInput.addEventListener('input', () => rollCipher('typing'));
-
-      rollCipher('init');
-    });
-  </script>
-</body>
+  </main>\n</body>
 </html>
+

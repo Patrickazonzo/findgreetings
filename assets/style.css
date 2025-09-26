@@ -192,6 +192,11 @@ dialog article {
   letter-spacing: 0.28rem;
   text-align: center;
   margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .cipher-actions {
