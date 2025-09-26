@@ -3,171 +3,27 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Enigma 4 - Corridor Challenge</title>
+  <title>Enigma 4 - Corridoio</title>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
   <link rel="stylesheet" href="assets/style.css?v=2025-09-24-01">
   <script src="assets/app.js?v=2025-09-24-01"></script>
 </head>
 <body data-page="enigma4">
   <script>initGate('enigma4', { requiredStep: 'enigma3' });</script>
-  <main class="container-narrow">
-    <article class="center-stack">
-      <header>
-        <h1>Enigma 4 - Corridoio strettissimo</h1>
-        <p>Tieni premuto il mouse dal punto di partenza all'arrivo senza toccare i bordi rossi. Se molli la presa o sfiori il bordo, si riparte e appare un popup (con spazio per una immagine futura).</p>
-      </header>
-
+  <main class="container-narrow maze-stage" style="margin-top: 0%;">
+    <div class="maze-backdrop" aria-hidden="true">
+      <video class="maze-backdrop__video" src="assets/media/monkeZoomGif.mp4" autoplay loop muted playsinline></video>
+    </div>
+    <article class="maze-card center-stack" style="margin: 0%;">
+      <p class="maze-taunt">Trascinati fino al viola senza sbattere: il corridoio non perdona.</p>
       <section class="maze-wrapper">
         <div id="mazeCanvas" class="mouse-maze" aria-label="Corridoio da percorrere">
           <div class="maze-start" aria-hidden="true">START</div>
           <div class="maze-finish" aria-hidden="true">FINISH</div>
         </div>
       </section>
-      <p id="mazeStatus" class="maze-status" aria-live="polite">Premi e trascina dal verde al viola senza staccare il mouse.</p>
+      <p id="mazeStatus" class="maze-status" aria-live="polite">Tienilo premuto o il labirinto ti risputa indietro.</p>
     </article>
   </main>
-
-  <dialog id="mazeDialog">
-    <article>
-      <header>
-        <h2>Quasi!</h2>
-      </header>
-      <div class="maze-dialog-body">
-        <p>Hai toccato il bordo o hai mollato troppo presto. Ritenta.</p>
-        <div class="maze-dialog-preview" aria-hidden="true">[ spazio per immagine futura ]</div>
-      </div>
-      <footer>
-        <button data-role="close-dialog" type="button">Okay</button>
-      </footer>
-    </article>
-  </dialog>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const maze = document.getElementById('mazeCanvas');
-      const statusEl = document.getElementById('mazeStatus');
-      const dialog = document.getElementById('mazeDialog');
-      const closeBtn = dialog?.querySelector('[data-role="close-dialog"]');
-
-      if (!maze || !statusEl) return;
-
-      const segments = [
-        { x: 20, y: 30, width: 260, height: 42 },
-        { x: 238, y: 30, width: 42, height: 170 },
-        { x: 120, y: 160, width: 160, height: 42 },
-        { x: 120, y: 160, width: 42, height: 110 },
-        { x: 120, y: 230, width: 240, height: 42 }
-      ];
-
-      const checkpoints = [
-        { x: 238, y: 30, width: 42, height: 42, id: 'A' },
-        { x: 120, y: 160, width: 42, height: 42, id: 'B' }
-      ];
-
-      const startZone = { x: 20, y: 30, width: 42, height: 42 };
-      const finishZone = { x: 318, y: 230, width: 42, height: 42 };
-
-      const renderSegments = () => {
-        segments.forEach((seg) => {
-          const block = document.createElement('div');
-          block.className = 'maze-segment';
-          block.style.left = seg.x + 'px';
-          block.style.top = seg.y + 'px';
-          block.style.width = seg.width + 'px';
-          block.style.height = seg.height + 'px';
-          maze.appendChild(block);
-        });
-      };
-
-      const withinRect = (x, y, rect, margin = 0) => (
-        x >= rect.x - margin &&
-        x <= rect.x + rect.width + margin &&
-        y >= rect.y - margin &&
-        y <= rect.y + rect.height + margin
-      );
-
-      let tracking = false;
-      const visited = new Set();
-
-      const resetTracking = () => {
-        tracking = false;
-        visited.clear();
-        statusEl.textContent = 'Premi e trascina dal verde al viola senza staccare il mouse.';
-      };
-
-      const showDialog = () => {
-        if (!dialog) return;
-        if (typeof dialog.showModal === 'function') {
-          dialog.showModal();
-        }
-      };
-
-      const closeDialog = () => {
-        if (!dialog) return;
-        if (dialog.open) dialog.close();
-      };
-
-      const failRun = (message) => {
-        statusEl.textContent = message;
-        showDialog();
-        resetTracking();
-      };
-
-      const pointerMove = (event) => {
-        if (!tracking) return;
-        const rect = maze.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
-          failRun('Sei uscito dal corridoio.');
-          return;
-        }
-
-        const inside = segments.some((seg) => withinRect(x, y, seg, -2));
-        if (!inside) {
-          failRun('Hai toccato il bordo rosso.'); // TODO: Mostrare popup con immagine/animazione quando si fallisce
-          return;
-        }
-
-        checkpoints.forEach((cp) => {
-          if (withinRect(x, y, cp, -4)) {
-            visited.add(cp.id);
-          }
-        });
-
-        if (withinRect(x, y, finishZone, 0) && visited.size === checkpoints.length) {
-          tracking = false;
-          statusEl.textContent = 'Percorso perfetto!';
-          setTimeout(() => goNext('enigma5.html', 'enigma5'), 400);
-        }
-      };
-
-      const pointerUp = () => {
-        if (tracking) {
-          failRun('Devi tenere premuto fino alla fine.');
-        }
-      };
-
-      maze.addEventListener('pointerdown', (event) => {
-        const rect = maze.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        if (!withinRect(x, y, startZone, 0)) return;
-        if (event.button !== 0) return;
-        closeDialog();
-        tracking = true;
-        visited.clear();
-        statusEl.textContent = 'Mantieni la pressione e vai piano...';
-      });
-
-      window.addEventListener('pointermove', pointerMove);
-      window.addEventListener('pointerup', pointerUp);
-      closeBtn?.addEventListener('click', () => closeDialog());
-
-      renderSegments();
-      resetTracking();
-    });
-  </script>
 </body>
 </html>

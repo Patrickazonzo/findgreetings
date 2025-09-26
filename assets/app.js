@@ -1,5 +1,4 @@
 (() => {
-  // TODO: Considerare una strategia di offuscamento/build per rendere piu arduo il reverse engineering del flusso JS.
   const FG = {
     VERSION: '2025-09-24-01',
     STORAGE_KEY: 'fg_state',
@@ -759,10 +758,218 @@
     rollCipher('init');
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initEnigma1, { once: true });
-  } else {
+  const initEnigma4 = () => {
+    if (document.body?.dataset.page !== 'enigma4') return;
+
+    const maze = document.getElementById('mazeCanvas');
+    const statusEl = document.getElementById('mazeStatus');
+    const startEl = maze?.querySelector('.maze-start');
+    const finishEl = maze?.querySelector('.maze-finish');
+    const card = document.querySelector('.maze-card');
+
+    if (!maze || !statusEl || !startEl || !finishEl || maze.dataset.enigmaReady === 'true') {
+      return;
+    }
+
+    maze.dataset.enigmaReady = 'true';
+
+    const applyNoScroll = () => {
+      document.documentElement.classList.add('maze-no-scroll');
+      document.body.classList.add('maze-no-scroll');
+    };
+
+    const releaseNoScroll = () => {
+      document.documentElement.classList.remove('maze-no-scroll');
+      document.body.classList.remove('maze-no-scroll');
+    };
+
+    const detachScrollLocks = () => {
+      releaseNoScroll();
+      window.removeEventListener('pagehide', detachScrollLocks);
+      window.removeEventListener('beforeunload', detachScrollLocks);
+    };
+
+    applyNoScroll();
+    window.addEventListener('pagehide', detachScrollLocks, { once: true });
+    window.addEventListener('beforeunload', detachScrollLocks, { once: true });
+
+    const defaultStatus = 'Tienilo premuto o il labirinto ti risputa indietro.';
+    const vanishStatus = 'Ora vai a memoria: nessun bordo a guidarti.';
+    const mazeBounds = () => maze.getBoundingClientRect();
+
+    const segments = [
+      { x: 64, y: 30, width: 360, height: 64 },
+      { x: 360, y: 30, width: 64, height: 110 },
+      { x: 230, y: 110, width: 194, height: 60 },
+      { x: 230, y: 110, width: 64, height: 130 },
+      { x: 230, y: 200, width: 230, height: 56 },
+      { x: 410, y: 200, width: 50, height: 104 },
+      { x: 300, y: 270, width: 160, height: 48 },
+      { x: 290, y: 270, width: 52, height: 96 },
+      { x: 290, y: 330, width: 152, height: 40 },
+    ];
+
+    const checkpoints = [
+      { x: 352, y: 30, width: 68, height: 68, id: 'A' },
+      { x: 330, y: 200, width: 56, height: 56, id: 'B' },
+      { x: 405, y: 330, width: 56, height: 56, id: 'C' },
+    ];
+
+    const startZone = { x: 64, y: 30, width: 64, height: 64 };
+    const finishZone = { x: 405, y: 330, width: 40, height: 40 };
+
+    maze.querySelectorAll('.maze-segment').forEach((node) => node.remove());
+    const frag = document.createDocumentFragment();
+    segments.forEach((seg) => {
+      const block = document.createElement('div');
+      block.className = 'maze-segment';
+      block.style.left = `${seg.x}px`;
+      block.style.top = `${seg.y}px`;
+      block.style.width = `${seg.width}px`;
+      block.style.height = `${seg.height}px`;
+      frag.appendChild(block);
+    });
+    maze.insertBefore(frag, startEl || maze.firstChild);
+
+    Object.assign(startEl.style, {
+      left: `${startZone.x}px`,
+      top: `${startZone.y}px`,
+      width: `${startZone.width}px`,
+      height: `${startZone.height}px`,
+      right: 'auto',
+      bottom: 'auto',
+    });
+
+    Object.assign(finishEl.style, {
+      left: `${finishZone.x}px`,
+      top: `${finishZone.y}px`,
+      width: `${finishZone.width}px`,
+      height: `${finishZone.height}px`,
+      right: 'auto',
+      bottom: 'auto',
+    });
+
+    const withinRect = (x, y, rect, margin = 0) => (
+      x >= rect.x - margin &&
+      x <= rect.x + rect.width + margin &&
+      y >= rect.y - margin &&
+      y <= rect.y + rect.height + margin
+    );
+
+    const failEffect = {
+      audio: `${MEDIA_BASE}monke.opus`,
+      visual: { type: 'image', src: `${MEDIA_BASE}funnyFaceSquare.jpg`, alt: 'Faccione beffardo che ti prende in giro.' },
+      closeLabel: 'Ancora una volta',
+    };
+
+    let tracking = false;
+    let vanishTriggered = false;
+    const visited = new Set();
+
+    const restoreMaze = () => {
+      vanishTriggered = false;
+      maze.classList.remove('is-ghost');
+      card?.classList.remove('is-faded');
+    };
+
+    const resetTracking = (preserveStatus = false) => {
+      tracking = false;
+      visited.clear();
+      restoreMaze();
+      if (!preserveStatus) {
+        statusEl.textContent = defaultStatus;
+      }
+    };
+
+    const triggerVanish = () => {
+      if (vanishTriggered) return;
+      vanishTriggered = true;
+      maze.classList.add('is-ghost');
+      card?.classList.add('is-faded');
+      statusEl.textContent = vanishStatus;
+    };
+
+    const failRun = (message) => {
+      statusEl.textContent = message;
+      showMediaPopup(failEffect, {
+        id: 'fg-maze-fail',
+        closeLabel: failEffect.closeLabel,
+        audioOptions: { volume: 0.9, allowOverlap: false },
+      });
+      resetTracking(true);
+    };
+
+    const pointerMove = (event) => {
+      if (!tracking) return;
+      const rect = mazeBounds();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+        failRun('Fuori pista. Il muro ti ha espulso.');
+        return;
+      }
+
+      const inside = segments.some((seg) => withinRect(x, y, seg, -4));
+      if (!inside) {
+        failRun('Hai sfiorato il bordo. Ricominciamo.');
+        return;
+      }
+
+      if (!vanishTriggered && y >= rect.height * 0.55) {
+        triggerVanish();
+      }
+
+      checkpoints.forEach((cp) => {
+        if (withinRect(x, y, cp, -6)) {
+          visited.add(cp.id);
+        }
+      });
+
+      if (withinRect(x, y, finishZone, -6) && visited.size === checkpoints.length) {
+        tracking = false;
+        restoreMaze();
+        detachScrollLocks();
+        statusEl.textContent = 'Hai domato il corridoio. Avanti.';
+        setTimeout(() => goNext('enigma5.html', 'enigma5'), 420);
+      }
+    };
+
+    const pointerUp = () => {
+      if (tracking) {
+        failRun('Hai mollato prima del traguardo.');
+      }
+    };
+
+    maze.addEventListener('pointerdown', (event) => {
+      const rect = mazeBounds();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      if (!withinRect(x, y, startZone, 0)) return;
+      if (event.button !== 0) return;
+      tracking = true;
+      visited.clear();
+      restoreMaze();
+      statusEl.textContent = 'Non sbattere: ogni tocco ricomincia da capo.';
+    });
+
+    window.addEventListener('pointermove', pointerMove);
+    window.addEventListener('pointerup', pointerUp);
+
+    resetTracking();
+  };
+
+
+
+  const runPageInitialisers = () => {
     initEnigma1();
+    initEnigma4();
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runPageInitialisers, { once: true });
+  } else {
+    runPageInitialisers();
   }
 
   window.resetToStart = resetToStart;
