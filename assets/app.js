@@ -52,6 +52,193 @@
     return Array.from({ length: len }, () => Math.random().toString(36).slice(-1)).join('');
   };
 
+  const MEDIA_BASE = 'assets/media/';
+  const MEDIA = {
+    finalVoice: `${MEDIA_BASE}auguri.opus`,
+    finalExtras: [
+      {
+        audio: `${MEDIA_BASE}monke.opus`,
+        visual: { type: 'video', src: `${MEDIA_BASE}monkeZoomGif.mp4`, alt: 'Scimmia entusiasta che celebra la vittoria.' },
+        autoCloseMs: 6500,
+        caption: 'Modalita scimmia attivata: urla di gioia per il tuo trionfo!',
+        closeLabel: 'Ok, basta urlare',
+      },
+      {
+        audio: `${MEDIA_BASE}crow.mp3`,
+        visual: { type: 'image', src: `${MEDIA_BASE}crow.jpg`, alt: 'Corvo sarcastico che applaude.' },
+        autoCloseMs: 5200,
+        caption: 'Il corvo chiacchierone gracchia "bravo!".',
+        closeLabel: 'Grazie, corvaccio',
+      },
+      {
+        audio: null,
+        visual: { type: 'image', src: `${MEDIA_BASE}funnyFace.jpg`, alt: 'Faccia buffa con sorriso esagerato.' },
+        autoCloseMs: 4800,
+        caption: 'Sorriso gigante: missione completata, rilassati pure.',
+        closeLabel: 'Che stile!',
+      },
+    ],
+    failEffects: [
+      {
+        audio: `${MEDIA_BASE}crow.mp3`,
+        visual: { type: 'image', src: `${MEDIA_BASE}shockFace.jpg`, alt: 'Illustrazione shock del labirinto di enigma 4.' },
+        autoCloseMs: 4200,
+        closeLabel: 'Riprovo',
+      },
+    ],
+  };
+
+  const PASSWORD_FAIL_KEY = 'fg_password_fail_count';
+
+  const audioCache = new Map();
+
+  const clampVolume = (value) => {
+    if (typeof value !== 'number' || Number.isNaN(value)) return 1;
+    return Math.min(1, Math.max(0, value));
+  };
+
+  const playAudio = (src, options = {}) => {
+    if (!src) return null;
+    const opts = Object.assign({ volume: 1, loop: false, allowOverlap: false }, options);
+    try {
+      let audio = audioCache.get(src);
+      if (opts.allowOverlap && audio && !audio.paused) {
+        audio = audio.cloneNode(true);
+      } else if (!audio) {
+        audio = new Audio(src);
+        audio.preload = 'auto';
+        audioCache.set(src, audio);
+      }
+      audio.loop = !!opts.loop;
+      audio.volume = clampVolume(opts.volume);
+      audio.currentTime = 0;
+      const playPromise = audio.play();
+      if (playPromise?.catch) {
+        playPromise.catch((err) => console.warn('Audio play blocked', src, err));
+      }
+      return audio;
+    } catch (err) {
+      console.warn('Unable to initialise audio', src, err);
+      return null;
+    }
+  };
+
+  const stopAudio = (audio) => {
+    if (!audio) return;
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+    } catch (err) {
+      console.warn('Unable to stop audio', err);
+    }
+  };
+
+  const pickRandom = (list) => {
+    if (!Array.isArray(list) || list.length === 0) return null;
+    const index = Math.floor(Math.random() * list.length);
+    return list[index];
+  };
+
+  const ACTIVE_MEDIA_POPUPS = new Map();
+
+  const showMediaPopup = (effect, options = {}) => {
+    if (!effect) return null;
+    const opts = Object.assign({
+      id: 'fg-media-popup',
+      closeLabel: effect.closeLabel || 'Chiudi',
+      autoCloseMs: effect.autoCloseMs || 0,
+      audioOptions: effect.audioOptions || { volume: 0.9, allowOverlap: true },
+      onClose: null,
+    }, options);
+
+    const previous = ACTIVE_MEDIA_POPUPS.get(opts.id);
+    if (previous && typeof previous.cleanup === 'function') {
+      previous.cleanup();
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'fg-media-popup';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.78);display:flex;align-items:center;justify-content:center;z-index:14000;padding:24px;backdrop-filter:blur(2px);';
+
+    const panel = document.createElement('div');
+    panel.style.cssText = 'background:#121212;color:#f6f6f6;padding:18px 22px;border-radius:14px;max-width:min(92vw,420px);width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.45);text-align:center;';
+
+    let mediaNode = null;
+    if (effect.visual?.type === 'video') {
+      const video = document.createElement('video');
+      video.src = effect.visual.src;
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.style.cssText = 'max-width:100%;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+      if (effect.visual.alt) video.setAttribute('aria-label', effect.visual.alt);
+      mediaNode = video;
+    } else if (effect.visual?.src) {
+      const img = document.createElement('img');
+      img.src = effect.visual.src;
+      img.alt = effect.visual.alt || '';
+      img.style.cssText = 'max-width:100%;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+      mediaNode = img;
+    }
+
+    if (mediaNode) {
+      panel.appendChild(mediaNode);
+    }
+
+    if (effect.caption) {
+      const p = document.createElement('p');
+      p.textContent = effect.caption;
+      p.style.cssText = 'margin:14px 0 0;font-size:0.95rem;';
+      panel.appendChild(p);
+    }
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.textContent = opts.closeLabel;
+    closeBtn.style.cssText = 'margin-top:14px;padding:8px 16px;border-radius:999px;border:none;background:#ffb347;color:#111;font-weight:600;cursor:pointer;';
+    panel.appendChild(closeBtn);
+
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    const audioOptions = opts.audioOptions || {};
+    const audioRef = playAudio(effect.audio, audioOptions);
+
+    let autoTimer = null;
+
+    const cleanup = () => {
+      if (overlay.parentNode) overlay.remove();
+      if (audioRef && !audioOptions.keepPlaying) {
+        stopAudio(audioRef);
+      }
+      if (typeof opts.onClose === 'function') {
+        try { opts.onClose(); } catch (err) { console.warn('onClose handler error', err); }
+      }
+      if (autoTimer) {
+        clearTimeout(autoTimer);
+        autoTimer = null;
+      }
+      ACTIVE_MEDIA_POPUPS.delete(opts.id);
+    };
+
+    closeBtn.addEventListener('click', cleanup);
+    overlay.addEventListener('click', (ev) => {
+      if (ev.target === overlay) cleanup();
+    });
+
+    if (opts.autoCloseMs && opts.autoCloseMs > 0) {
+      autoTimer = setTimeout(() => cleanup(), opts.autoCloseMs);
+    }
+
+    const record = { cleanup, overlay, audio: audioRef };
+    ACTIVE_MEDIA_POPUPS.set(opts.id, record);
+    return record;
+  };
+
+  let finalVoiceRef = null;
+  let finalExtraTimer = null;
+
   const extractToken = () => {
     const params = new URLSearchParams(window.location.search);
     return params.get('k') || '';
@@ -188,7 +375,6 @@
   };
 
   const checkAnswer = (userInput, expected, onFail = 'reset') => {
-    // TODO: Agganciare popup visivi con immagini o animazioni dedicate agli errori
     const sanitizedUser = (userInput || '').trim().toLowerCase();
     const sanitizedExpected = (expected || '').trim().toLowerCase();
     const success = sanitizedUser === sanitizedExpected;
@@ -214,9 +400,30 @@
   };
 
   const showAuguri = () => {
-    // TODO: Allegare audio/voce finale (es. messaggio auguri) e invitare l'utente ad alzare il volume; valutare effetti extra (es. scimmia che urla)
+    if (finalExtraTimer) {
+      clearTimeout(finalExtraTimer);
+      finalExtraTimer = null;
+    }
+
     const dlg = document.getElementById('auguriDialog');
-    if (dlg?.showModal) dlg.showModal();
+    if (dlg?.showModal) {
+      dlg.showModal();
+      if (!dlg.dataset.audioHintAttached) {
+        const container = dlg.querySelector('article') || dlg;
+        const hint = document.createElement('p');
+        hint.textContent = 'Alza il volume: sta partendo un messaggio vocale dedicato.';
+        hint.style.marginTop = '0.75rem';
+        hint.style.fontSize = '0.95rem';
+        hint.style.fontWeight = '500';
+        container.appendChild(hint);
+        dlg.dataset.audioHintAttached = 'true';
+      }
+    }
+
+    if (finalVoiceRef) {
+      stopAudio(finalVoiceRef);
+    }
+    finalVoiceRef = playAudio(MEDIA.finalVoice, { volume: 0.85 });
 
     try {
       if (typeof window.confetti === 'function') {
@@ -225,9 +432,27 @@
         setTimeout(() => window.confetti({ particleCount: 200, spread: 100, ticks: 200, scalar: 1.1 }), 900);
         setTimeout(ensureConfettiCanvasClass, 0);
         setTimeout(ensureConfettiCanvasClass, 200);
+        if (typeof ensureCanvasClass === 'function') {
+          setTimeout(ensureCanvasClass, 0);
+          setTimeout(ensureCanvasClass, 200);
+        }
       }
     } catch (err) {
       console.warn('Confetti not available', err);
+    }
+
+    if (Array.isArray(MEDIA.finalExtras) && MEDIA.finalExtras.length) {
+      const effect = pickRandom(MEDIA.finalExtras);
+      if (effect) {
+        finalExtraTimer = setTimeout(() => {
+          showMediaPopup(effect, {
+            id: 'fg-final-popup',
+            closeLabel: effect.closeLabel || 'Wow!',
+            autoCloseMs: effect.autoCloseMs || 6000,
+            audioOptions: Object.assign({ volume: 0.88, allowOverlap: true }, effect.audioOptions || {}),
+          });
+        }, 900);
+      }
     }
   };
 
@@ -244,7 +469,6 @@
   }
 
   const setupPasswordGate = (config = {}) => {
-    // TODO: Integrare popup con immagini/suoni quando gli utenti sbagliano ripetutamente la password
     const overlay = document.querySelector(config.overlaySelector || '#fgPasswordOverlay');
     const form = overlay?.querySelector('form');
     const input = overlay?.querySelector(config.inputSelector || 'input[type="password"],input[type="text"]');
@@ -260,6 +484,9 @@
     const cooldownMs = config.cooldownMs ?? FG.DEFAULT_COOLDOWN_MS;
     let lockedUntil = 0;
     let countdownTimer = null;
+    let failCount = parseInt(sessionStorage.getItem(PASSWORD_FAIL_KEY) || '0', 10);
+    if (!Number.isFinite(failCount) || failCount < 0) failCount = 0;
+    let lastFailPopup = null;
 
     const setFeedback = (message = '', variant = '') => {
       if (!feedbackEl) return;
@@ -270,6 +497,31 @@
     const setDisabled = (disabled) => {
       if (submitBtn) submitBtn.disabled = disabled;
       input.disabled = disabled;
+    };
+
+    const resetFailCount = () => {
+      failCount = 0;
+      sessionStorage.removeItem(PASSWORD_FAIL_KEY);
+      if (lastFailPopup && typeof lastFailPopup.cleanup === 'function') {
+        lastFailPopup.cleanup();
+      }
+      lastFailPopup = null;
+    };
+
+    const showPasswordFailPopup = () => {
+      const effect = Array.isArray(MEDIA.failEffects) ? MEDIA.failEffects[0] : null;
+      if (!effect) return;
+      lastFailPopup = showMediaPopup(effect, {
+        id: 'fg-password-fail-popup',
+        closeLabel: effect.closeLabel || 'Riprovo',
+        autoCloseMs: effect.autoCloseMs || 4500,
+        audioOptions: Object.assign({ volume: 0.92, allowOverlap: true }, effect.audioOptions || {}),
+        onClose: () => {
+          if (input && !input.disabled) {
+            setTimeout(() => input.focus(), 120);
+          }
+        },
+      });
     };
 
     const releaseLock = () => {
@@ -319,6 +571,7 @@
       }
       if (expected && value === expected) {
         releaseLock();
+        resetFailCount();
         overlay.classList.add('is-hidden');
         setFeedback('');
         input.value = '';
@@ -327,10 +580,15 @@
         }
         return;
       }
+      failCount += 1;
+      sessionStorage.setItem(PASSWORD_FAIL_KEY, String(failCount));
       const nextLock = now() + cooldownMs;
       sessionStorage.setItem(FG.COOLDOWN_KEY, String(nextLock));
       applyLock(nextLock);
       input.value = '';
+      if (failCount >= 1) {
+        showPasswordFailPopup();
+      }
       if (typeof config.onFail === 'function') {
         config.onFail();
       }

@@ -14,21 +14,10 @@
     <article class="center-stack">
       <header>
         <h1>Enigma 1 - Cifrario mutevole</h1>
-        <p>Il messaggio cambia ad ogni tuo tentativo: il shift del cifrario Cesare si rigenera in continuazione, ma il testo in chiaro resta lo stesso.</p>
       </header>
 
-      <!-- TODO: Caricare le immagini definitive e usarle come fonte di indizi/metadati -->
       <section class="cipher-board">
-        <div>
-          <span class="cipher-label">Shift attuale:</span>
-          <strong id="shiftValue">+0</strong>
-        </div>
         <pre id="cipherText" class="cipher-text">?</pre>
-        <div class="cipher-actions">
-          <button type="button" id="rerollShift" class="secondary">Rigenera shift</button>
-          <small>Storico recente:</small>
-          <ul id="shiftHistory" class="cipher-history"></ul>
-        </div>
       </section>
 
       <form id="cipherForm" class="cipher-form">
@@ -38,9 +27,6 @@
         <p id="cipherFeedback" class="cipher-feedback" aria-live="polite"></p>
       </form>
 
-      <footer class="cipher-hint">
-        <p>Hint: l'oggetto illuminava gia l'ingresso sulla pagina iniziale.</p><!-- TODO: Raffinare il quinto indizio collegandolo ai metadati di un'immagine dell'enigma 1 -->
-      </footer>
     </article>
   </main>
 
@@ -49,19 +35,14 @@
       const TARGET = 'LANTERNA SUL BALCONE';
       const targetNormalized = TARGET.replace(/[^a-z]/gi, '').toLowerCase();
 
-      const shiftValueEl = document.getElementById('shiftValue');
       const cipherTextEl = document.getElementById('cipherText');
-      const rerollBtn = document.getElementById('rerollShift');
-      const historyEl = document.getElementById('shiftHistory');
       const form = document.getElementById('cipherForm');
       const answerInput = document.getElementById('cipherAnswer');
       const feedbackEl = document.getElementById('cipherFeedback');
 
-      if (!shiftValueEl || !cipherTextEl || !form) return;
+      if (!cipherTextEl || !form || !answerInput || !feedbackEl) return;
 
-      const MAX_HISTORY = 6;
       const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      let currentShift = 0;
 
       const normalize = (text) => (text || '').replace(/[^a-z]/gi, '').toLowerCase();
 
@@ -75,16 +56,6 @@
         }).join('');
       };
 
-      const pushHistory = (shift, text) => {
-        if (!historyEl) return;
-        const entry = document.createElement('li');
-        entry.textContent = 'Shift ' + (shift > 0 ? '+' : '') + shift + ': ' + text;
-        historyEl.prepend(entry);
-        while (historyEl.children.length > MAX_HISTORY) {
-          historyEl.removeChild(historyEl.lastElementChild);
-        }
-      };
-
       const randomShift = () => {
         let shift = 0;
         while (shift === 0) {
@@ -95,11 +66,8 @@
       };
 
       const rollCipher = (reason = 'auto') => {
-        currentShift = randomShift();
-        const encoded = encode(targetNormalized, currentShift).match(/.{1,4}/g)?.join(' ') || '';
+        const encoded = encode(targetNormalized, randomShift()).match(/.{1,4}/g)?.join(' ') || '';
         cipherTextEl.textContent = encoded;
-        shiftValueEl.textContent = (currentShift > 0 ? '+' : '') + currentShift;
-        pushHistory(currentShift, encoded);
         if (reason === 'typing') {
           cipherTextEl.classList.add('wiggle');
           setTimeout(() => cipherTextEl.classList.remove('wiggle'), 180);
@@ -128,7 +96,6 @@
 
       form.addEventListener('submit', handleSubmit);
       answerInput.addEventListener('input', () => rollCipher('typing'));
-      rerollBtn?.addEventListener('click', () => rollCipher('manual'));
 
       rollCipher('init');
     });

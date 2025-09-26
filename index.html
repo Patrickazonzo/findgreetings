@@ -17,14 +17,12 @@
       <header>
         <h2 id="gateTitle">Chi bussa?</h2>
       </header>
-      <p>Inserisci la chiave segreta per iniziare la caccia.</p>
       <form id="fgPasswordForm" autocomplete="off">
         <label class="visually-hidden" for="fgPasswordInput">Password</label>
         <input id="fgPasswordInput" type="password" name="password" placeholder="Password" minlength="4" required autocomplete="off" spellcheck="false">
         <p class="gate-feedback" aria-live="polite"></p>
         <button type="submit" class="button-primary" data-role="password-submit">Entra</button>
       </form>
-      <footer class="gate-hint">Suggerimento: Alessio ama gli enigmi (e le lanterne).</footer>
     </article>
   </div>
 
@@ -58,7 +56,7 @@
       }
 
       setupPasswordGate({
-        expected: 'lanterna',
+        expected: 'corvo',
         cooldownMs: 12000,
         onSuccess: unlockStart,
         onFail: () => { document.body.dataset.gate = 'locked'; }
