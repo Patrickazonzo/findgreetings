@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8" />
@@ -10,46 +10,21 @@
 </head>
 <body data-page="enigma2">
   <script>initGate('enigma2', { requiredStep: 'enigma1' });</script>
-  <main class="container-narrow">
-    <article class="center-stack">
-      <header>
-        <h1>Enigma 2 - Slide Puzzle</h1>
-        <p>Ricomponi il meme prima che il tempo scada. Per ora c'e solo un'anteprima numerata, ma la logica e pronta per un'immagine vera.</p>
-      </header>
+  <main class="container-narrow puzzle-stage-wrapper">
+    <article class="puzzle-card center-stack">
+      <p class="puzzle-taunt">Ricomponi il ghigno shock o resta bloccato qui.</p>
 
       <section class="puzzle-info" aria-live="polite">
-        <div><strong>Mosse:</strong> <span id="puzzleMoves">0</span></div>
-        <div><strong>Tempo:</strong> <span id="puzzleTimer">02:30</span></div>
+        <div><strong>Mosse</strong> <span id="puzzleMoves">0</span></div>
+        <div><strong>Tempo</strong> <span id="puzzleTimer">10:00</span></div>
         <button type="button" id="puzzleReset" class="secondary">Rigenera puzzle</button>
       </section>
 
       <div class="puzzle-stage">
         <div class="puzzle-wrapper">
-          <button type="button" class="puzzle-eye" id="puzzleEye" aria-label="Occhio furbetto">??</button> <!-- TODO: Regolare il posizionamento definitivo dell'occhietto skip per enigma 3 -->
-          <div id="slidePuzzle" class="slide-puzzle" aria-label="Puzzle a scorrimento"></div>
+          <div id="slidePuzzle" class="slide-puzzle" aria-label="Puzzle a scorrimento shockFace"></div>
           <p id="puzzleStatus" class="puzzle-status" aria-live="assertive"></p>
         </div>
-        <aside class="puzzle-preview" aria-hidden="true">
-          <h2>Anteprima soluzione</h2>
-          <div class="puzzle-preview-grid" role="presentation"> <!-- TODO: Sostituire con miniature reali una volta caricate le immagini -->
-            <span>1</span>
-            <span>2</span>
-            <span>3</span>
-            <span>4</span>
-            <span>5</span>
-            <span>6</span>
-            <span>7</span>
-            <span>8</span>
-            <span>9</span>
-            <span>10</span>
-            <span>11</span>
-            <span>12</span>
-            <span>13</span>
-            <span>14</span>
-            <span>15</span>
-            <span class="is-empty"></span>
-          </div>
-        </aside>
       </div>
     </article>
   </main>
@@ -57,34 +32,32 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const SIZE = 4; // 4x4 (15 puzzle)
-      const TIME_LIMIT = 150; // secondi
+      const TIME_LIMIT = 600; // secondi (10 minuti)
+      const MOVE_PENALTY = 5; // secondi sottratti a ogni mossa
+      const IMAGE_SRC = 'assets/media/shockFace.jpg';
       const puzzleEl = document.getElementById('slidePuzzle');
       const timerEl = document.getElementById('puzzleTimer');
       const moveEl = document.getElementById('puzzleMoves');
       const statusEl = document.getElementById('puzzleStatus');
       const resetBtn = document.getElementById('puzzleReset');
-      const skipEyeBtn = document.getElementById('puzzleEye');
 
       if (!puzzleEl) return;
 
+      let timeBank = TIME_LIMIT;
       let board = [];
       let emptyIndex = 0;
       let moves = 0;
       let timerId = null;
-      let remaining = TIME_LIMIT;
+      let remaining = timeBank;
       let solved = false;
 
-      const indexToCoord = (idx) => ({
-        row: Math.floor(idx / SIZE),
-        col: idx % SIZE
-      });
-
+      const indexToCoord = (idx) => ({ row: Math.floor(idx / SIZE), col: idx % SIZE });
       const coordToIndex = (row, col) => row * SIZE + col;
 
       const formatTime = (seconds) => {
         const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
         const ss = String(seconds % 60).padStart(2, '0');
-        return mm + ':' + ss;
+        return `${mm}:${ss}`;
       };
 
       const updateHud = () => {
@@ -96,18 +69,22 @@
         const tile = document.createElement('button');
         tile.type = 'button';
         tile.className = 'puzzle-tile';
-        const { row, col } = indexToCoord(index);
-        tile.style.setProperty('--tile-x', col);
-        tile.style.setProperty('--tile-y', row);
-        tile.style.setProperty('--tile-size', SIZE);
 
         if (value === 0) {
           tile.classList.add('is-empty');
           tile.tabIndex = -1;
           tile.setAttribute('aria-hidden', 'true');
+          tile.style.backgroundImage = 'none';
         } else {
-          tile.textContent = value;
-          tile.setAttribute('aria-label', 'Pezzo ' + value);
+          const homeRow = Math.floor((value - 1) / SIZE);
+          const homeCol = (value - 1) % SIZE;
+          const posX = ((SIZE === 1 ? 0 : homeCol / (SIZE - 1)) * 100).toFixed(4);
+          const posY = ((SIZE === 1 ? 0 : homeRow / (SIZE - 1)) * 100).toFixed(4);
+          tile.style.backgroundImage = `url(${IMAGE_SRC})`;
+          tile.style.backgroundRepeat = 'no-repeat';
+          tile.style.backgroundSize = `${SIZE * 100}% ${SIZE * 100}%`;
+          tile.style.backgroundPosition = `${posX}% ${posY}%`;
+          tile.setAttribute('aria-label', `Pezzo ${value}`);
         }
 
         tile.addEventListener('click', () => {
@@ -129,9 +106,7 @@
       const isAdjacent = (i1, i2) => {
         const a = indexToCoord(i1);
         const b = indexToCoord(i2);
-        const sameRow = a.row === b.row && Math.abs(a.col - b.col) === 1;
-        const sameCol = a.col === b.col && Math.abs(a.row - b.row) === 1;
-        return sameRow || sameCol;
+        return (a.row === b.row && Math.abs(a.col - b.col) === 1) || (a.col === b.col && Math.abs(a.row - b.row) === 1);
       };
 
       const isSolved = () => board.every((val, idx, arr) => (idx === arr.length - 1 ? val === 0 : val === idx + 1));
@@ -143,17 +118,21 @@
         }
       };
 
+      const triggerTimeout = () => {
+        remaining = 0;
+        updateHud();
+        stopTimer();
+        statusEl.textContent = 'Tempo scaduto! Ho rigenerato il puzzle.';
+        reshuffle('timeout');
+      };
+
       const startTimer = () => {
         stopTimer();
-        remaining = TIME_LIMIT;
+        remaining = timeBank;
         timerId = setInterval(() => {
           remaining -= 1;
           if (remaining <= 0) {
-            remaining = 0;
-            updateHud();
-            stopTimer();
-            statusEl.textContent = 'Tempo scaduto! Ho rigenerato il puzzle.';
-            reshuffle('timeout');
+            triggerTimeout();
             return;
           }
           updateHud();
@@ -169,15 +148,28 @@
         updateHud();
       };
 
+      const applyMovePenalty = () => {
+        if (MOVE_PENALTY <= 0) return false;
+        remaining = Math.max(0, remaining - MOVE_PENALTY);
+        updateHud();
+        if (remaining === 0) {
+          triggerTimeout();
+          return true;
+        }
+        return false;
+      };
+
       const handleMove = (tileIndex) => {
         if (!isAdjacent(tileIndex, emptyIndex)) return;
         moveTile(tileIndex);
         if (isSolved()) {
           solved = true;
           stopTimer();
-          statusEl.textContent = 'Grande! Puzzle completo.';
+          statusEl.textContent = 'Benvenuto tra i volti distorti.';
           setTimeout(() => goNext('enigma3.html', 'enigma3'), 700);
+          return;
         }
+        applyMovePenalty();
       };
 
       const scramble = (iterations = 250) => {
@@ -204,6 +196,9 @@
       const reshuffle = (reason = 'manual') => {
         solved = false;
         moves = 0;
+        if (reason === 'timeout') {
+          timeBank += 300;
+        }
         if (reason !== 'timeout') {
           statusEl.textContent = '';
         }
@@ -215,7 +210,6 @@
       };
 
       resetBtn?.addEventListener('click', () => reshuffle('manual'));
-      skipEyeBtn?.addEventListener('click', () => goNext('enigma3.html', 'enigma3'));
 
       document.addEventListener('keydown', (event) => {
         if (solved) return;
@@ -236,3 +230,16 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
