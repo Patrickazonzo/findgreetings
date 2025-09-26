@@ -53,30 +53,8 @@
 
   const MEDIA_BASE = 'assets/media/';
   const MEDIA = {
-    finalVoice: `${MEDIA_BASE}auguri.opus`,
-    finalExtras: [
-      {
-        audio: `${MEDIA_BASE}monke.opus`,
-        visual: { type: 'video', src: `${MEDIA_BASE}monkeZoomGif.mp4`, alt: 'Scimmia entusiasta che celebra la vittoria.' },
-        autoCloseMs: 6500,
-        caption: 'Modalita scimmia attivata: urla di gioia per il tuo trionfo!',
-        closeLabel: 'Ok, basta urlare',
-      },
-      {
-        audio: `${MEDIA_BASE}crow.mp3`,
-        visual: { type: 'image', src: `${MEDIA_BASE}crow.jpg`, alt: 'Corvo sarcastico che applaude.' },
-        autoCloseMs: 5200,
-        caption: 'Il corvo chiacchierone gracchia "bravo!".',
-        closeLabel: 'Grazie, corvaccio',
-      },
-      {
-        audio: null,
-        visual: { type: 'image', src: `${MEDIA_BASE}funnyFace.jpg`, alt: 'Faccia buffa con sorriso esagerato.' },
-        autoCloseMs: 4800,
-        caption: 'Sorriso gigante: missione completata, rilassati pure.',
-        closeLabel: 'Che stile!',
-      },
-    ],
+    finalVoice: `${MEDIA_BASE}auguri.mp3`,
+    finalExtras: [],
     failEffects: [
       {
         audio: `${MEDIA_BASE}crow.mp3`,
@@ -84,6 +62,15 @@
         autoCloseMs: 4200,
         closeLabel: 'Riprovo',
       },
+    ],
+    failSounds: [
+      `${MEDIA_BASE}fart-with-reverb.mp3`,
+      `${MEDIA_BASE}fart-with-reverb_alt.mp3`,
+      `${MEDIA_BASE}fart-with-extra-reverb.mp3`,
+      `${MEDIA_BASE}fart-meme-sound.mp3`,
+      `${MEDIA_BASE}fart-two.mp3`,
+      `${MEDIA_BASE}dry-fart_3.mp3`,
+      `${MEDIA_BASE}bing-bong-subway-nyc.mp3`,
     ],
   };
 
@@ -136,6 +123,14 @@
     if (!Array.isArray(list) || list.length === 0) return null;
     const index = Math.floor(Math.random() * list.length);
     return list[index];
+  };
+
+  const playFailSfx = () => {
+    const pool = Array.isArray(MEDIA.failSounds) ? MEDIA.failSounds : null;
+    if (!pool || pool.length === 0) return null;
+    const src = pickRandom(pool);
+    if (!src) return null;
+    return playAudio(src, { volume: 0.85, allowOverlap: true });
   };
 
   const shuffleCopy = (list) => {
@@ -246,7 +241,6 @@
   };
 
   let finalVoiceRef = null;
-  let finalExtraTimer = null;
 
   const extractToken = () => {
     const params = new URLSearchParams(window.location.search);
@@ -389,6 +383,8 @@
     const success = sanitizedUser === sanitizedExpected;
     if (success) return true;
 
+    playFailSfx();
+
     if (onFail === 'regen') {
       const url = new URL(window.location.href);
       url.searchParams.set('seed', randomToken(8));
@@ -399,83 +395,17 @@
     return false;
   };
 
-  const ensureConfettiCanvasClass = () => {
-    const canvases = document.querySelectorAll('canvas');
-    canvases.forEach((canvas) => {
-      if (!canvas.classList.contains('confetti-canvas')) {
-        canvas.classList.add('confetti-canvas');
-      }
-    });
-  };
-
   const showAuguri = () => {
-    if (finalExtraTimer) {
-      clearTimeout(finalExtraTimer);
-      finalExtraTimer = null;
-    }
-
     const dlg = document.getElementById('auguriDialog');
     if (dlg?.showModal) {
       dlg.showModal();
-      if (!dlg.dataset.audioHintAttached) {
-        const container = dlg.querySelector('article') || dlg;
-        const hint = document.createElement('p');
-        hint.textContent = 'Alza il volume: sta partendo un messaggio vocale dedicato.';
-        hint.style.marginTop = '0.75rem';
-        hint.style.fontSize = '0.95rem';
-        hint.style.fontWeight = '500';
-        container.appendChild(hint);
-        dlg.dataset.audioHintAttached = 'true';
-      }
     }
 
     if (finalVoiceRef) {
       stopAudio(finalVoiceRef);
     }
     finalVoiceRef = playAudio(MEDIA.finalVoice, { volume: 0.85 });
-
-    try {
-      if (typeof window.confetti === 'function') {
-        window.confetti({ particleCount: 90, spread: 60, origin: { y: 0.6 } });
-        setTimeout(() => window.confetti({ particleCount: 120, spread: 80, scalar: 0.9 }), 400);
-        setTimeout(() => window.confetti({ particleCount: 200, spread: 100, ticks: 200, scalar: 1.1 }), 900);
-        setTimeout(ensureConfettiCanvasClass, 0);
-        setTimeout(ensureConfettiCanvasClass, 200);
-        if (typeof ensureCanvasClass === 'function') {
-          setTimeout(ensureCanvasClass, 0);
-          setTimeout(ensureCanvasClass, 200);
-        }
-      }
-    } catch (err) {
-      console.warn('Confetti not available', err);
-    }
-
-    if (Array.isArray(MEDIA.finalExtras) && MEDIA.finalExtras.length) {
-      const effect = pickRandom(MEDIA.finalExtras);
-      if (effect) {
-        finalExtraTimer = setTimeout(() => {
-          showMediaPopup(effect, {
-            id: 'fg-final-popup',
-            closeLabel: effect.closeLabel || 'Wow!',
-            autoCloseMs: effect.autoCloseMs || 6000,
-            audioOptions: Object.assign({ volume: 0.88, allowOverlap: true }, effect.audioOptions || {}),
-          });
-        }, 900);
-      }
-    }
   };
-
-  window.addEventListener('resize', ensureConfettiCanvasClass);
-  window.addEventListener('orientationchange', ensureConfettiCanvasClass);
-
-  const globalObserver = new MutationObserver(() => ensureConfettiCanvasClass());
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      globalObserver.observe(document.body, { childList: true, subtree: true });
-    }, { once: true });
-  } else if (document.body) {
-    globalObserver.observe(document.body, { childList: true, subtree: true });
-  }
 
   const setupPasswordGate = (config = {}) => {
     const overlay = document.querySelector(config.overlaySelector || '#fgPasswordOverlay');
@@ -576,6 +506,7 @@
       const value = (input.value || '').trim().toLowerCase();
       if (!value) {
         setFeedback('Inserisci la password.', 'warn');
+        playFailSfx();
         return;
       }
       if (expected && value === expected) {
@@ -589,6 +520,9 @@
         }
         return;
       }
+
+      playFailSfx();
+
       failCount += 1;
       sessionStorage.setItem(PASSWORD_FAIL_KEY, String(failCount));
       const nextLock = now() + cooldownMs;
@@ -715,6 +649,7 @@
       if (!attempt) {
         feedbackEl.textContent = 'Serve scrivere qualcosa.';
         feedbackEl.dataset.state = 'warn';
+        playFailSfx();
         return;
       }
 
@@ -725,6 +660,7 @@
         }
         feedbackEl.textContent = 'Nope. Il cifrario si confonde e cambia di nuovo.';
         feedbackEl.dataset.state = 'error';
+        playFailSfx();
         answerInput.focus();
         rollCipher('manual');
         return;
@@ -739,6 +675,7 @@
 
       feedbackEl.textContent = 'Nemmeno questa volta. Tutto si rimescola di nuovo.';
       feedbackEl.dataset.state = 'error';
+      playFailSfx();
       answerInput.select();
       rollCipher('manual');
     };
@@ -890,6 +827,7 @@
     };
 
     const failRun = (message) => {
+      playFailSfx();
       statusEl.textContent = message;
       showMediaPopup(failEffect, {
         id: 'fg-maze-fail',
@@ -972,6 +910,7 @@
     runPageInitialisers();
   }
 
+  window.playFailSfx = playFailSfx;
   window.resetToStart = resetToStart;
   window.checkAnswer = checkAnswer;
   window.showAuguri = showAuguri;
@@ -980,4 +919,3 @@
   window.startFlow = startFlow;
   window.setupPasswordGate = setupPasswordGate;
 })();
-

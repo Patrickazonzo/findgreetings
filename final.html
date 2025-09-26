@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Finale (?)</title>
+  <title>Finale</title>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
   <link rel="stylesheet" href="assets/style.css?v=2025-09-24-01">
   <style>
@@ -19,44 +19,31 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      opacity: 0.14;
+      opacity: 0.16;
       transition: opacity .25s ease, transform .15s ease;
       z-index: 9999;
       clip-path: circle(45%);
     }
 
-    .eye-btn:hover {
-      opacity: .78;
+    .eye-btn:hover,
+    .eye-btn:focus-visible {
+      opacity: 0.82;
       transform: scale(1.22);
-    }
-
-    canvas.confetti-canvas {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      pointer-events: none;
-      z-index: 13000 !important;
-    }
-
-    dialog::backdrop {
-      background: rgba(0, 0, 0, .55);
-      z-index: 12000;
+      outline: none;
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="assets/app.js?v=2025-09-24-01"></script>
 </head>
 <body data-page="final">
   <script>initGate('final', { requiredStep: 'enigma5' });</script>
   <main class="container-narrow center-stack">
-    <h1>Congratulazioni... forse.</h1>
-    <p>Hai completato gli enigmi. Ora devi scegliere quale occhio sa davvero dove guardare.</p>
+    <h1>Congratulazioni.</h1>
+    <p>Hai terminato il percorso: trova l'occhio corretto e ascolta il messaggio.</p>
   </main>
 
   <dialog id="auguriDialog">
     <article>
-      <header><h2>Ok, ci ho provato...</h2></header>
+      <header><h2>Un pensiero finale</h2></header>
       <p><strong>Buon compleanno, Alessio!</strong><br> Anche stavolta vinci te.</p>
       <footer><button type="button" data-role="close-auguri">Chiudi</button></footer>
     </article>
@@ -67,31 +54,21 @@
       const TOTAL_EYES = 12;
       const MIN_DIST = 34;
       const VIEWPORT_PADDING = 48;
-      const auguriDialog = document.getElementById('auguriDialog');
-      const closeBtn = auguriDialog?.querySelector('[data-role="close-auguri"]');
+      const dialog = document.getElementById('auguriDialog');
+      const closeBtn = dialog?.querySelector('[data-role="close-auguri"]');
 
       const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
       const rand = (min, max) => Math.random() * (max - min) + min;
 
-      const ensureCanvasClass = () => {
-        const canvases = document.querySelectorAll('canvas');
-        canvases.forEach((canvas) => canvas.classList.add('confetti-canvas'));
-      };
-
-      const patchConfetti = () => {
-        if (typeof window.confetti !== 'function') return;
-        const original = window.confetti;
-        window.confetti = function () {
-          const result = original.apply(this, arguments);
-          setTimeout(ensureCanvasClass, 0);
-          setTimeout(ensureCanvasClass, 200);
-          return result;
-        };
+      const clearEyes = () => {
+        document.querySelectorAll('.eye-btn').forEach((node) => node.remove());
       };
 
       const spawnEyes = () => {
+        clearEyes();
         const winnerIndex = Math.floor(Math.random() * TOTAL_EYES);
         const placed = [];
+
         for (let i = 0; i < TOTAL_EYES; i += 1) {
           const btn = document.createElement('button');
           btn.className = 'eye-btn';
@@ -109,37 +86,39 @@
             attempts += 1;
           } while (attempts < 40 && placed.some((p) => Math.hypot(p.x - x, p.y - y) < MIN_DIST));
 
-          btn.style.left = x + 'px';
-          btn.style.top = y + 'px';
+          btn.style.left = `${x}px`;
+          btn.style.top = `${y}px`;
           placed.push({ x, y });
 
           if (i === winnerIndex) {
             btn.addEventListener('click', () => {
+              clearEyes();
               if (typeof showAuguri === 'function') {
                 showAuguri();
-                ensureCanvasClass();
               }
-            });
+            }, { once: true });
           } else {
             btn.addEventListener('click', () => {
-              resetEyes();
+              spawnEyes();
             });
           }
+
           document.body.appendChild(btn);
         }
       };
 
-      const resetEyes = () => {
-        document.querySelectorAll('.eye-btn').forEach((node) => node.remove());
-        spawnEyes();
-      };
+      closeBtn?.addEventListener('click', () => dialog?.close());
 
-      closeBtn?.addEventListener('click', () => auguriDialog?.close());
-
-      patchConfetti();
       spawnEyes();
+
+      let resizeTimer = null;
       window.addEventListener('resize', () => {
-        window.requestAnimationFrame(() => resetEyes());
+        if (resizeTimer) {
+          window.cancelAnimationFrame(resizeTimer);
+        }
+        resizeTimer = window.requestAnimationFrame(() => {
+          spawnEyes();
+        });
       });
     });
   </script>

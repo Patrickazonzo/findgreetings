@@ -12,11 +12,7 @@
   <script>initGate('enigma3', { requiredStep: 'enigma2' });</script>
   <main class="container-narrow">
     <article class="center-stack">
-      <header>
-        <h1>Enigma 3 - Metadati capricciosi</h1>
-        <p>Uno di questi elementi nasconde, in un attributo <code>data-*</code>, la parola chiave. Ogni errore fa ricominciare la caccia con un nuovo elemento e una nuova parola.</p>
-      </header>
-
+      
       <section class="secret-grid" id="secretGrid">
         <div class="secret-card" data-role="card">
           <h2>1</h2>
@@ -43,14 +39,7 @@
           <p>Cartoline dal futuro</p>
         </div>
       </section>
-
-      <div class="secret-controls">
-        <button type="button" id="shuffleSecret" class="secondary">Agita la stanza</button>
-        <small>Tip: ispeziona con attenzione (o con gli strumenti giusti) prima che sparisca di nuovo.</small>
-      </div>
-
       <form id="secretForm" class="secret-form">
-        <label for="secretInput">Inserisci la parola nascosta</label>
         <input id="secretInput" type="text" name="secret" autocomplete="off" spellcheck="false" placeholder="Scrivi qui" required>
         <button type="submit">Svela</button>
         <p id="secretFeedback" class="secret-feedback" aria-live="polite"></p>
@@ -65,6 +54,7 @@
       const input = document.getElementById('secretInput');
       const feedback = document.getElementById('secretFeedback');
       const shuffleBtn = document.getElementById('shuffleSecret');
+      const playFailSfx = typeof window.playFailSfx === 'function' ? window.playFailSfx : () => {};
 
       if (!grid || !form || !input) return;
 
@@ -104,6 +94,7 @@
         if (!attempt) {
           feedback.textContent = 'Serve scrivere qualcosa.';
           feedback.dataset.state = 'warn';
+          playFailSfx();
           return;
         }
         if (attempt === normalize(currentSecret)) {
@@ -114,6 +105,7 @@
         }
         feedback.textContent = 'Ops, ha cambiato nascondiglio.';
         feedback.dataset.state = 'error';
+        playFailSfx();
         reshuffle('wrong');
       });
 

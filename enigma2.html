@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8" />
@@ -40,6 +40,7 @@
       const moveEl = document.getElementById('puzzleMoves');
       const statusEl = document.getElementById('puzzleStatus');
       const resetBtn = document.getElementById('puzzleReset');
+      const playFailSfx = typeof window.playFailSfx === 'function' ? window.playFailSfx : () => {};
 
       if (!puzzleEl) return;
 
@@ -122,6 +123,7 @@
         remaining = 0;
         updateHud();
         stopTimer();
+        playFailSfx();
         statusEl.textContent = 'Tempo scaduto! Ho rigenerato il puzzle.';
         reshuffle('timeout');
       };
@@ -230,16 +232,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
