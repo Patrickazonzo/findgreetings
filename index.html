@@ -1,14 +1,21 @@
 <!doctype html>
 <html lang="it">
+
 <head>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+  <link rel="shortcut icon" href="assets/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="assets/site.webmanifest">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FG - FindGreetings</title>
+  <title>Toc Toc, mi senti?</title>
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
   <link rel="stylesheet" href="assets/style.css?v=2025-09-24-01">
   <script src="assets/app.js?v=2025-09-24-01"></script>
 </head>
+
 <body class="bg-dark full-viewport" data-page="index">
   <script>initGate('index', { isStart: true });</script>
 
@@ -19,7 +26,8 @@
       </header>
       <form id="fgPasswordForm" autocomplete="off">
         <label class="visually-hidden" for="fgPasswordInput">Password</label>
-        <input id="fgPasswordInput" type="password" name="password" placeholder="Password" minlength="4" required autocomplete="off" spellcheck="false">
+        <input id="fgPasswordInput" type="password" name="password" placeholder="Password" minlength="4" required
+          autocomplete="off" spellcheck="false">
         <p class="gate-feedback" aria-live="polite"></p>
         <button type="submit" class="button-primary" data-role="password-submit">Entra</button>
       </form>
@@ -64,4 +72,5 @@
     });
   </script>
 </body>
+
 </html>

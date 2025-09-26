@@ -1,18 +1,25 @@
 <!doctype html>
 <html lang="it">
+
 <head>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+  <link rel="shortcut icon" href="assets/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="assets/site.webmanifest">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Enigma 3 - Attributi volatili</title>
+  <title>3</title>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
   <link rel="stylesheet" href="assets/style.css?v=2025-09-24-01">
   <script src="assets/app.js?v=2025-09-24-01"></script>
 </head>
+
 <body data-page="enigma3">
   <script>initGate('enigma3', { requiredStep: 'enigma2' });</script>
   <main class="container-narrow">
     <article class="center-stack">
-      
+
       <section class="secret-grid" id="secretGrid">
         <div class="secret-card" data-role="card">
           <h2>1</h2>
@@ -40,7 +47,8 @@
         </div>
       </section>
       <form id="secretForm" class="secret-form">
-        <input id="secretInput" type="text" name="secret" autocomplete="off" spellcheck="false" placeholder="Scrivi qui" required>
+        <input id="secretInput" type="text" name="secret" autocomplete="off" spellcheck="false" placeholder="Scrivi qui"
+          required>
         <button type="submit">Svela</button>
         <p id="secretFeedback" class="secret-feedback" aria-live="polite"></p>
       </form>
@@ -54,7 +62,7 @@
       const input = document.getElementById('secretInput');
       const feedback = document.getElementById('secretFeedback');
       const shuffleBtn = document.getElementById('shuffleSecret');
-      const playFailSfx = typeof window.playFailSfx === 'function' ? window.playFailSfx : () => {};
+      const playFailSfx = typeof window.playFailSfx === 'function' ? window.playFailSfx : () => { };
 
       if (!grid || !form || !input) return;
 
@@ -115,4 +123,5 @@
     });
   </script>
 </body>
+
 </html>

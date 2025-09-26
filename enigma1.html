@@ -1,13 +1,20 @@
 <!doctype html>
 <html lang="it">
+
 <head>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+  <link rel="shortcut icon" href="assets/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="assets/site.webmanifest">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Enigma 1 - Cifrario</title>
+  <title>1</title>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
   <link rel="stylesheet" href="assets/style.css?v=2025-09-24-01">
   <script src="assets/app.js?v=2025-09-24-01"></script>
 </head>
+
 <body data-page="enigma1">
   <script>initGate('enigma1', { requiredStep: 'start' });</script>
   <main class="container-narrow">
@@ -17,7 +24,8 @@
       </section>
 
       <form id="cipherForm" class="cipher-form">
-        <input id="cipherAnswer" name="answer" type="text" autocomplete="off" spellcheck="false" placeholder="Scrivi la frase" required>
+        <input id="cipherAnswer" name="answer" type="text" autocomplete="off" spellcheck="false"
+          placeholder="Scrivi la frase" required>
         <button type="submit">Conferma</button>
         <p id="cipherFeedback" class="cipher-feedback" aria-live="polite"></p>
       </form>
@@ -25,5 +33,5 @@
     </article>
   </main>
 </body>
-</html>
 
+</html>

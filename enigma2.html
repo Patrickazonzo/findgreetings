@@ -1,13 +1,20 @@
 <!doctype html>
 <html lang="it">
+
 <head>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+  <link rel="shortcut icon" href="assets/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="assets/site.webmanifest">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Enigma 2 - Slide Puzzle</title>
+  <title>2</title>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
   <link rel="stylesheet" href="assets/style.css?v=2025-09-24-01">
   <script src="assets/app.js?v=2025-09-24-01"></script>
 </head>
+
 <body data-page="enigma2">
   <script>initGate('enigma2', { requiredStep: 'enigma1' });</script>
   <main class="container-narrow puzzle-stage-wrapper">
@@ -40,7 +47,7 @@
       const moveEl = document.getElementById('puzzleMoves');
       const statusEl = document.getElementById('puzzleStatus');
       const resetBtn = document.getElementById('puzzleReset');
-      const playFailSfx = typeof window.playFailSfx === 'function' ? window.playFailSfx : () => {};
+      const playFailSfx = typeof window.playFailSfx === 'function' ? window.playFailSfx : () => { };
 
       if (!puzzleEl) return;
 
@@ -231,4 +238,5 @@
     });
   </script>
 </body>
+
 </html>

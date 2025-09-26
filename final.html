@@ -1,9 +1,15 @@
 <!doctype html>
 <html lang="it">
+
 <head>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+  <link rel="shortcut icon" href="assets/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="assets/site.webmanifest">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Finale</title>
+  <title>Wow, congratulazioni?</title>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
   <link rel="stylesheet" href="assets/style.css?v=2025-09-24-01">
   <style>
@@ -34,6 +40,7 @@
   </style>
   <script src="assets/app.js?v=2025-09-24-01"></script>
 </head>
+
 <body data-page="final">
   <script>initGate('final', { requiredStep: 'enigma5' });</script>
   <main class="container-narrow center-stack">
@@ -43,7 +50,9 @@
 
   <dialog id="auguriDialog">
     <article>
-      <header><h2>TRUE ENDING</h2></header>
+      <header>
+        <h2>TRUE ENDING</h2>
+      </header>
       <p><strong>Buon compleanno, Alessio!</strong><br> Anche stavolta vinci te... ma a che prezzo?</p>
       <footer><button type="button" data-role="close-auguri">Chiudi</button></footer>
     </article>
@@ -123,4 +132,5 @@
     });
   </script>
 </body>
+
 </html>
